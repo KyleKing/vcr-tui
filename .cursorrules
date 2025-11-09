@@ -1,0 +1,345 @@
+# VCR-TUI Project Context
+
+**AI Guidance for Cursor and other tools**
+
+This project maintains comprehensive Claude Skills in `.claude/skills/`.
+This file provides quick reference - see skills for detailed guidance.
+
+---
+
+## Project Overview
+
+**vcr-tui** - A Text User Interface (TUI) application built with Textual for managing and viewing VCR cassettes.
+
+**Tech Stack:**
+- **Framework**: Textual (Python TUI framework)
+- **Testing**: pytest with async support
+- **Tools**: hk (git hooks), ruff (linting), mypy (type checking)
+- **Python**: 3.11+
+
+---
+
+## Comprehensive Guidance
+
+For detailed help, see Claude Skills:
+
+### 🎨 Textual TUI Framework
+**Location:** `.claude/skills/textual/`
+
+Complete Textual development guide including:
+- App and widget architecture
+- Reactive programming patterns
+- CSS (TCSS) styling
+- Testing with pytest
+- Common pitfalls and solutions
+
+### 🪝 Git Hooks (hk)
+**Location:** `.claude/skills/hk/`
+
+Git hook management with hk:
+- Setup and configuration
+- Linter integration
+- Pre-commit/pre-push hooks
+- Best practices
+
+### 🛠️ Meta-Skills
+- **skill-manager**: `.claude/skills/skill-manager/` - Managing skills
+- **skill-analyzer**: `.claude/skills/skill-analyzer/` - Identifying needed skills
+- **skill-sync**: `.claude/skills/skill-sync/` - Cross-tool integration
+
+---
+
+## Quick Patterns
+
+### Textual Widget Structure
+
+```python
+from textual.app import App, ComposeResult
+from textual.widget import Widget
+from textual.reactive import reactive
+
+class MyWidget(Widget):
+    """Widget with reactive state."""
+
+    count = reactive(0)  # Auto-refreshes UI on change
+
+    def compose(self) -> ComposeResult:
+        """Build child widgets."""
+        yield ChildWidget()
+
+    def on_mount(self) -> None:
+        """Called after mounted - safe for reactive updates."""
+        self.count = 10
+        self.set_interval(1, self.update_count)
+
+    def render(self) -> str:
+        """Return renderable content."""
+        return f"Count: {self.count}"
+```
+
+**Key Principles:**
+- ✅ Use `reactive()` for auto-updating state
+- ✅ Modify reactives in `on_mount()`, not `__init__()`
+- ✅ Follow "attributes down, messages up" pattern
+- ✅ Separate UI from business logic
+
+### Testing Pattern
+
+```python
+import pytest
+from my_app import MyApp
+
+@pytest.mark.asyncio
+async def test_interaction():
+    """Test user interaction."""
+    app = MyApp()
+    async with app.run_test() as pilot:
+        # Simulate user action
+        await pilot.click("#my-button")
+
+        # CRITICAL: Wait for async processing
+        await pilot.pause()
+
+        # Assert state changed
+        result = app.query_one("#result")
+        assert "Expected" in str(result.renderable)
+```
+
+**Key Principles:**
+- ✅ Always `await pilot.pause()` before assertions
+- ✅ Use `app.query_one()` to find widgets
+- ✅ Test with different terminal sizes
+- ✅ Mark tests with `@pytest.mark.asyncio`
+
+### CSS Styling (TCSS)
+
+```css
+/* Semantic colors (preferred) */
+Button {
+    background: $primary;
+    color: $text;
+}
+
+Button:hover {
+    background: $primary-lighten-1;
+}
+
+/* Layout with FR units */
+#content {
+    width: 1fr;   /* Fill available space */
+    height: 1fr;
+}
+
+/* Docking for fixed elements */
+#header {
+    dock: top;
+    height: 3;
+}
+
+#sidebar {
+    dock: left;
+    width: 30;
+}
+```
+
+**Key Principles:**
+- ✅ Use semantic colors: `$primary`, `$error`, `$success`
+- ✅ FR units for flexible sizing: `1fr`, `2fr`
+- ✅ Dock for fixed positioning
+- ✅ External CSS files for live reload
+
+### Async Operations
+
+```python
+from textual.worker import work
+
+class MyWidget(Widget):
+    @work(exclusive=True)  # Cancel previous if running
+    async def fetch_data(self) -> None:
+        """Non-blocking async operation."""
+        data = await api.fetch()  # Use async libraries
+        self.display(data)
+
+    def on_button_pressed(self) -> None:
+        """Don't await - worker runs in background."""
+        self.fetch_data()
+```
+
+**Key Principles:**
+- ✅ Use `@work` decorator for async operations
+- ✅ Use async libraries (httpx, aiofiles, etc.)
+- ❌ Don't block event loop with sync I/O
+- ❌ Don't use requests (use httpx instead)
+
+---
+
+## Common Mistakes to Avoid
+
+### Textual Development
+
+❌ **Modifying reactives in `__init__`**
+```python
+def __init__(self):
+    super().__init__()
+    self.count = 10  # Triggers watchers before mounted!
+```
+
+✅ **Use `on_mount()` or `set_reactive()`**
+```python
+def __init__(self):
+    super().__init__()
+    self.set_reactive(MyWidget.count, 10)  # No watcher trigger
+
+def on_mount(self):
+    self.count = 10  # Safe - widget is mounted
+```
+
+---
+
+❌ **Forgetting `await pilot.pause()` in tests**
+```python
+await pilot.click("#button")
+assert app.status == "done"  # Race condition!
+```
+
+✅ **Always pause before assertions**
+```python
+await pilot.click("#button")
+await pilot.pause()  # Wait for message processing
+assert app.status == "done"
+```
+
+---
+
+❌ **Blocking the event loop**
+```python
+def on_button_pressed(self):
+    response = requests.get(url)  # Blocks UI!
+```
+
+✅ **Use workers for I/O**
+```python
+@work(exclusive=True)
+async def on_button_pressed(self):
+    response = await httpx.get(url)  # Non-blocking
+```
+
+---
+
+## Project Structure
+
+```
+vcr-tui/
+├── .claude/
+│   └── skills/              # Comprehensive guidance
+│       ├── textual/         # TUI framework
+│       ├── hk/              # Git hooks
+│       ├── skill-manager/   # Skill lifecycle
+│       ├── skill-analyzer/  # Skill recommendations
+│       └── skill-sync/      # Cross-tool sync
+├── src/                     # Application code (if exists)
+├── tests/                   # Test files
+└── hk.pkl                   # Git hook configuration
+```
+
+---
+
+## Development Workflow
+
+### Before Committing
+
+```bash
+# Run checks (configured in hk.pkl)
+hk check
+
+# Run tests
+pytest
+
+# Type check
+mypy .
+```
+
+### Development Mode
+
+```bash
+# Textual dev mode (live reload)
+textual run --dev app.py
+
+# Development console (Terminal 1)
+textual console
+
+# Run app (Terminal 2)
+textual run --dev app.py
+```
+
+### Debugging
+
+```python
+# In code - log to console
+from textual import log
+
+log("Debug message", locals())
+log(self.tree)  # Widget hierarchy
+```
+
+---
+
+## Code Style
+
+- **Type hints**: Required for all functions
+- **Docstrings**: Required for classes and public methods
+- **Formatting**: Handled by ruff (via hk hooks)
+- **Naming**:
+  - Classes: `PascalCase`
+  - Functions/methods: `snake_case`
+  - Constants: `UPPER_SNAKE_CASE`
+
+---
+
+## Testing Standards
+
+- All new features require tests
+- Use `pytest-asyncio` for async tests
+- Maintain >80% coverage (goal)
+- Test both success and error paths
+- Mock external dependencies
+
+---
+
+## For More Details
+
+**Comprehensive Guides:**
+1. Textual patterns: `.claude/skills/textual/SKILL.md`
+2. Quick reference: `.claude/skills/textual/quick-reference.md`
+3. Deep dive: `.claude/skills/textual/guide.md`
+
+**Git Hooks:**
+1. hk setup: `.claude/skills/hk/SKILL.md`
+2. Reference: `.claude/skills/hk/reference.md`
+
+**Managing Skills:**
+1. Creating skills: `.claude/skills/skill-manager/SKILL.md`
+2. Finding gaps: `.claude/skills/skill-analyzer/SKILL.md`
+3. Cross-tool sync: `.claude/skills/skill-sync/SKILL.md`
+
+---
+
+## AI Assistant Notes
+
+When suggesting code:
+1. Follow Textual patterns in skills
+2. Use type hints
+3. Include docstrings
+4. Test code before suggesting
+5. Reference relevant skill sections
+
+When uncertain:
+1. Check `.claude/skills/` first
+2. Refer to Textual official docs
+3. Look at existing codebase patterns
+4. Ask for clarification
+
+---
+
+*This file is generated and maintained alongside Claude Skills.*
+*Last updated: 2025-01-09*
