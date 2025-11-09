@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:textual.textualize.io)",
+      "WebSearch",
+      "WebFetch(domain:www.textualize.io)",
+      "WebFetch(domain:realpython.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:github.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
