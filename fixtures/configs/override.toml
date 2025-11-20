@@ -1,0 +1,10 @@
+# Override config for testing merge
+default_channel = "override"
+
+[channels.override]
+glob_patterns = ["override_*.yaml"]
+enabled = true
+
+[[channels.override.extraction_rules]]
+path = ".override"
+formatter = "yaml"

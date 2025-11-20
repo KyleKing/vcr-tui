@@ -1,0 +1,11 @@
+# Local config file for testing
+default_channel = "local"
+
+[channels.local]
+glob_patterns = ["local_*.yaml"]
+enabled = true
+
+[[channels.local.extraction_rules]]
+path = ".test"
+formatter = "json"
+label = "Local Test"
