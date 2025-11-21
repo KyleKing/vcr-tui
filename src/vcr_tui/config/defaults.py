@@ -20,22 +20,22 @@ def get_default_config() -> Config:
         glob_patterns=["**/*.yaml", "**/*.yml"],
         extraction_rules=[
             ExtractionRule(
-                path=".http_interactions[].response.body.string",
+                path="interactions[].response.body.string",
                 formatter="text",
                 label="Response Body (Text)",
-                metadata_keys=["status", "method", "uri"],
+                metadata_keys=[],
             ),
             ExtractionRule(
-                path=".http_interactions[].response.body.string",
+                path="interactions[].response.body.string",
                 formatter="json",
                 label="Response Body (JSON)",
-                metadata_keys=["status", "method", "uri"],
+                metadata_keys=[],
             ),
             ExtractionRule(
-                path=".http_interactions[].request.body",
+                path="interactions[].request.body",
                 formatter="text",
                 label="Request Body",
-                metadata_keys=["method", "uri"],
+                metadata_keys=[],
             ),
         ],
         enabled=True,
