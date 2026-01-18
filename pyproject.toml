@@ -1,0 +1,47 @@
+[project]
+name = "vcr-tui"
+version = "0.1.0"
+description = "TUI for previewing VCR cassettes and machine-generated files"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.0.0",
+    "platformdirs>=3.0.0",
+    "rich>=13.0.0",
+    "ruamel.yaml>=0.18.0",
+    "textual>=0.50.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.0.0",
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-textual-snapshot>=0.1.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+vcr-tui = "vcr_tui.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vcr_tui"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
