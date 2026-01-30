@@ -1,0 +1,40 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      User-Agent:
+      - python-requests/2.28.0
+    method: GET
+    uri: https://api.example.com/users/1
+  response:
+    body:
+      string: '{"id": 1, "name": "John Doe", "email": "john@example.com", "role": "admin"}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"name": "Jane Doe", "email": "jane@example.com"}'
+    headers:
+      Accept:
+      - application/json
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.28.0
+    method: POST
+    uri: https://api.example.com/users
+  response:
+    body:
+      string: '{"id": 2, "name": "Jane Doe", "email": "jane@example.com", "role": "user", "created_at": "2024-01-15T10:30:00Z"}'
+    headers:
+      Content-Type:
+      - application/json
+    status:
+      code: 201
+      message: Created
+version: 1

@@ -1,0 +1,47 @@
+Screen {
+    background: $surface;
+}
+
+#main-container {
+    height: 1fr;
+}
+
+#file-list {
+    width: 30;
+    border: solid $primary-background;
+    background: $surface;
+}
+
+#file-list:focus {
+    border: solid $primary;
+}
+
+#content-container {
+    width: 1fr;
+}
+
+#yaml-viewer {
+    height: 1fr;
+    border: solid $secondary-background;
+    background: $surface;
+}
+
+#yaml-viewer:focus {
+    border: solid $secondary;
+}
+
+#preview-panel {
+    height: 2fr;
+    border: solid $primary-background;
+    background: $surface;
+    padding: 0 1;
+    overflow: auto;
+}
+
+#metadata-bar {
+    height: 3;
+    border: solid $primary-background;
+    background: $surface;
+    padding: 0 1;
+    content-align: left middle;
+}
