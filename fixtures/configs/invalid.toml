@@ -1,0 +1,3 @@
+# Invalid TOML file
+[channels.broken
+missing = "closing bracket"

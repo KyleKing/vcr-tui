@@ -1,0 +1,11 @@
+# Root config file (stops search)
+root = true
+default_channel = "root"
+
+[channels.root]
+glob_patterns = ["root_*.yaml"]
+enabled = true
+
+[[channels.root.extraction_rules]]
+path = ".root"
+formatter = "text"
