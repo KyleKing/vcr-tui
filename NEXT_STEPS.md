@@ -646,3 +646,15 @@ mypy src/
 **Success Criteria:** Working TUI that can inspect VCR cassettes with beautiful formatting
 
 **Let's build this! 🚀**
+
+---
+
+## Follow-ups (2026-07-27)
+
+- The `tests/` tree is only `__init__.py` files, so `pytest` collects zero tests and the pytest-textual-snapshot dependency is unused
+- No CI: the repo has no `.github/workflows/`, so ruff, mypy, and pytest only run locally
+- No git hooks: `hk.pkl` / `.pre-commit-config.yaml` are absent despite the bundled `hk` skill
+- `ExtractionRule.formatter` is now typed `FormatterType`, but `from_dict` reads it straight from YAML with no validation, so a bad config value fails late inside `format_content`
+- `PreviewEngine._normalize_path` is a no-op regex substitution (`\[(\d+)\]` -> `[\1]`) and either needs real normalization or removal
+- `PreviewEngine.discover_files` walks `rglob("*")` once per glob pattern, which will be slow on large trees
+- Decide whether to regenerate this project from `calcipy_template` before adding CI, hooks, docs, and release tooling by hand
