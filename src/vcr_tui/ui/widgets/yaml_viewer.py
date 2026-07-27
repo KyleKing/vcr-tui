@@ -1,3 +1,5 @@
+from typing import Any
+
 from textual.binding import Binding
 from textual.message import Message
 from textual.widgets import OptionList
@@ -18,7 +20,7 @@ class YAMLViewerWidget(OptionList):
         Binding("k", "cursor_up", "Up", show=False),
     ]
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._keys: list[YAMLKey] = []
 
@@ -31,11 +33,11 @@ class YAMLViewerWidget(OptionList):
             self.add_option(Option(display, id=key.path))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        if (key := self._find_key(event.option.id)):
+        if key := self._find_key(event.option.id):
             self.post_message(KeySelected(key))
 
     def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
-        if (key := self._find_key(event.option.id)):
+        if key := self._find_key(event.option.id):
             self.post_message(KeySelected(key))
 
     def _find_key(self, path: str | None) -> YAMLKey | None:

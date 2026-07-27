@@ -1,11 +1,13 @@
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Literal
+
+FormatterType = Literal["html", "json", "text", "toml", "yaml"]
 
 
 @dataclass(frozen=True)
 class ExtractionRule:
     path: str
-    formatter: str
+    formatter: FormatterType
     label: str | None = None
     metadata_keys: tuple[str, ...] = ()
 

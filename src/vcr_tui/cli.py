@@ -2,7 +2,9 @@ from pathlib import Path
 
 import click
 
+from vcr_tui.app import VCRTUIApp
 from vcr_tui.config import load_config
+from vcr_tui.config.models import Config
 from vcr_tui.preview import PreviewEngine
 
 
@@ -25,8 +27,7 @@ def main(ctx: click.Context, directory: Path, channel: str | None) -> None:
         _launch_tui(ctx.obj["directory"], ctx.obj["config"], channel)
 
 
-def _launch_tui(directory: Path, config: "Config", channel: str | None) -> None:
-    from vcr_tui.app import VCRTUIApp
+def _launch_tui(directory: Path, config: Config, channel: str | None) -> None:
     app = VCRTUIApp(directory=directory, config=config, channel=channel)
     app.run()
 
@@ -63,10 +64,7 @@ def preview(ctx: click.Context, file: Path, key: str | None) -> None:
     engine: PreviewEngine = ctx.obj["engine"]
     channel: str | None = ctx.obj["channel"]
 
-    if key:
-        result = engine.preview_key(file, key, channel)
-    else:
-        result = engine.preview_file(file, channel)
+    result = engine.preview_key(file, key, channel) if key else engine.preview_file(file, channel)
 
     if result.metadata:
         for meta_key, meta_value in result.metadata.items():

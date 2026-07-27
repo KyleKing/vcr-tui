@@ -22,12 +22,14 @@ def _extract_keys(data: Any, prefix: str = "", depth: int = 0) -> list[YAMLKey]:
             for key, value in data.items():
                 current_path = f"{prefix}.{key}" if prefix else key
                 is_leaf = not isinstance(value, (dict, list))
-                keys.append(YAMLKey(
-                    path=current_path,
-                    display=key,
-                    depth=depth,
-                    is_leaf=is_leaf,
-                ))
+                keys.append(
+                    YAMLKey(
+                        path=current_path,
+                        display=key,
+                        depth=depth,
+                        is_leaf=is_leaf,
+                    )
+                )
                 if isinstance(value, (dict, list)):
                     keys.extend(_extract_keys(value, current_path, depth + 1))
 
@@ -35,12 +37,14 @@ def _extract_keys(data: Any, prefix: str = "", depth: int = 0) -> list[YAMLKey]:
             for i, item in enumerate(data):
                 current_path = f"{prefix}[{i}]"
                 is_leaf = not isinstance(item, (dict, list))
-                keys.append(YAMLKey(
-                    path=current_path,
-                    display=f"[{i}]",
-                    depth=depth,
-                    is_leaf=is_leaf,
-                ))
+                keys.append(
+                    YAMLKey(
+                        path=current_path,
+                        display=f"[{i}]",
+                        depth=depth,
+                        is_leaf=is_leaf,
+                    )
+                )
                 if isinstance(item, (dict, list)):
                     keys.extend(_extract_keys(item, current_path, depth + 1))
 

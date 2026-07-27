@@ -1,5 +1,7 @@
-from textual.widgets import Static
+from typing import Any
+
 from rich.syntax import Syntax
+from textual.widgets import Static
 
 from vcr_tui.preview.types import PreviewResult
 
@@ -13,7 +15,7 @@ LEXER_MAP = {
 
 
 class PreviewPanelWidget(Static):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._result: PreviewResult | None = None
 

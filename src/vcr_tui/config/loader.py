@@ -48,7 +48,7 @@ def load_config(start_path: Path | None = None) -> Config:
 
     config = get_default_config()
 
-    if (global_config := load_global_config()):
+    if global_config := load_global_config():
         config = config.merge(global_config)
 
     local_configs = _find_config_files(start_path)

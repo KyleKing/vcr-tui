@@ -1,10 +1,11 @@
 import json
 from io import StringIO
-from typing import Any, Literal
+from typing import Any
 
+import tomli_w
 from ruamel.yaml import YAML
 
-FormatterType = Literal["html", "json", "text", "toml", "yaml"]
+from vcr_tui.config.models import FormatterType
 
 _yaml = YAML()
 _yaml.default_flow_style = False
@@ -53,6 +54,7 @@ def _format_html(content: Any) -> str:
         return str(content)
     try:
         from xml.dom.minidom import parseString
+
         dom = parseString(content)
         return dom.toprettyxml(indent="  ")
     except Exception:
@@ -62,8 +64,4 @@ def _format_html(content: Any) -> str:
 def _format_toml(content: Any) -> str:
     if isinstance(content, str):
         return content
-    try:
-        import tomli_w
-        return tomli_w.dumps(content)
-    except ImportError:
-        return str(content)
+    return tomli_w.dumps(content)

@@ -10,6 +10,7 @@ dependencies = [
     "rich>=13.0.0",
     "ruamel.yaml>=0.18.0",
     "textual>=0.50.0",
+    "tomli-w>=1.2.0",
 ]
 
 [project.optional-dependencies]

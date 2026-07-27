@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Static
+from textual.widgets import Footer, Header
 
 from vcr_tui.config import Config
 from vcr_tui.preview import PreviewEngine
@@ -18,7 +18,7 @@ from vcr_tui.ui.widgets import (
 )
 
 
-class MainScreen(Screen):
+class MainScreen(Screen[None]):
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("tab", "focus_next", "Next Panel", show=False),

@@ -6,7 +6,7 @@ from vcr_tui.config import Config
 from vcr_tui.ui.screens import MainScreen
 
 
-class VCRTUIApp(App):
+class VCRTUIApp(App[None]):
     CSS_PATH = "ui/styles/app.tcss"
     TITLE = "VCR-TUI"
 

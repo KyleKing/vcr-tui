@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import Any
 
-from vcr_tui.config.models import Channel, Config, ExtractionRule
+from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
 from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.types import PreviewResult, YAMLKey
 from vcr_tui.preview.yaml_parser import get_value_at_path, get_yaml_keys, load_yaml
-
 
 EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", ".tox"})
 
@@ -48,7 +47,7 @@ class PreviewEngine:
         channel = self.config.get_channel(channel_name)
         rule = self._find_matching_rule(key_path, channel)
 
-        formatter = rule.formatter if rule else "yaml"
+        formatter: FormatterType = rule.formatter if rule else "yaml"
         label = rule.label if rule else None
 
         formatted = format_content(value, formatter)
@@ -70,13 +69,12 @@ class PreviewEngine:
         data = load_yaml(file_path)
         channel = self.config.get_channel(channel_name)
 
+        formatter: FormatterType = "yaml"
+        label: str | None = None
         if channel and channel.extraction_rules:
             rule = channel.extraction_rules[0]
             formatter = rule.formatter
             label = rule.label
-        else:
-            formatter = "yaml"
-            label = None
 
         formatted = format_content(data, formatter)
 
@@ -111,7 +109,7 @@ class PreviewEngine:
         if len(key_parts) < len(rule_parts):
             return False
 
-        for rule_part, key_part in zip(rule_parts, key_parts):
+        for rule_part, key_part in zip(rule_parts, key_parts, strict=False):
             if "[]" in rule_part:
                 base = rule_part.replace("[]", "")
                 if not key_part.startswith(base):
@@ -123,6 +121,7 @@ class PreviewEngine:
 
     def _normalize_path(self, path: str) -> str:
         import re
+
         return re.sub(r"\[(\d+)\]", r"[\1]", path)
 
     def _extract_metadata(

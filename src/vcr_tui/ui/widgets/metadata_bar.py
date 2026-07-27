@@ -4,7 +4,7 @@ from textual.widgets import Static
 
 
 class MetadataBarWidget(Static):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._metadata: dict[str, Any] = {}
 
