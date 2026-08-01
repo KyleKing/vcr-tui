@@ -649,6 +649,13 @@ mypy src/
 
 ---
 
+## Follow-ups (2026-08-01)
+
+- every 2026-07-27 item below is still open; none have been addressed
+- ruff, ruff format, and mypy strict are all clean, but `pytest` still collects zero tests, so "gates pass" means very little here
+- click was bumped to `>=8.3.3` for PYSEC-2026-2132; the lock resolved 8.4.2 and `vcr-tui --help` still works
+- textual is a full major behind (7.3.0, latest 8.2.8) and mypy is on 1.19.1 against 2.3.0; both are breaking-change upgrades worth doing deliberately rather than in a freshen pass
+
 ## Follow-ups (2026-07-27)
 
 - The `tests/` tree is only `__init__.py` files, so `pytest` collects zero tests and the pytest-textual-snapshot dependency is unused
