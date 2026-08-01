@@ -5,7 +5,7 @@ description = "TUI for previewing VCR cassettes and machine-generated files"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "click>=8.0.0",
+    "click>=8.3.3",
     "platformdirs>=3.0.0",
     "rich>=13.0.0",
     "ruamel.yaml>=0.18.0",
