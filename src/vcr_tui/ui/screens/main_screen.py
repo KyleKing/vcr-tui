@@ -19,10 +19,11 @@ from vcr_tui.ui.widgets import (
 
 
 class MainScreen(Screen[None]):
+    # NOTE: Screen already binds tab/shift+tab to app.focus_next/app.focus_previous;
+    # do not override them with a bare 'focus_next' action — that action does not
+    # exist on Screen and Tab silently stops moving focus.
     BINDINGS = [
         Binding('q', 'quit', 'Quit'),
-        Binding('tab', 'focus_next', 'Next Panel', show=False),
-        Binding('shift+tab', 'focus_previous', 'Prev Panel', show=False),
     ]
 
     def __init__(

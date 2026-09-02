@@ -8,9 +8,12 @@ context = new Listing {
 // edits until it declares its own. These are the four commands this project's
 // CI would run, in the order a failure is cheapest to read.
 checks {
+  // The formatter rewrites rather than reports, the way the Go format gate
+  // does. Checking instead made every whitespace slip a turn the model spent
+  // guessing at what ruff wanted.
   ["format"] {
     paths = new Listing { "*.py" }
-    command = "uv run ruff format --check ."
+    command = "uv run ruff format ."
   }
   ["lint"] {
     paths = new Listing { "*.py" }

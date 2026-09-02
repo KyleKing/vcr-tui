@@ -97,11 +97,9 @@ class TestPreview:
         assert result.exit_code == 0
         assert '"name": "John Doe"' in result.output
 
-    def test_key_preview_metadata_empty_on_default_channel(
+    def test_key_preview_metadata_on_default_channel(
         self, runner: CliRunner, cassette: Path
     ) -> None:
-        # Pins current behaviour (suspected bug): metadata resolution misses on the
-        # default vcr channel, so no metadata lines are printed.
         result = runner.invoke(
             main,
             [
@@ -113,8 +111,8 @@ class TestPreview:
             ],
         )
         assert result.exit_code == 0
-        assert 'status.code' not in result.stderr
-        assert '---' not in result.stderr
+        assert 'status.code' in result.stderr
+        assert '---' in result.stderr
 
     def test_nonexistent_file_fails(self, runner: CliRunner, workspace: Path) -> None:
         result = runner.invoke(main, [str(workspace), 'preview', str(workspace / 'missing.yaml')])

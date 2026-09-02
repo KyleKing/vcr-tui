@@ -43,6 +43,25 @@ def tree(tmp_path: Path) -> Path:
 
 
 class TestDiscoverFiles:
+    def test_finds_yaml_directly_in_start_directory(
+        self, engine: PreviewEngine, tmp_path: Path
+    ) -> None:
+        # Regression: Path('a.yaml').match('**/*.yaml') is False, so with the
+        # broad 'yaml' channel a file at the top of the start directory was missed.
+        top = tmp_path / 'example.yaml'
+        top.write_text('a: 1\n')
+        assert engine.discover_files(tmp_path, 'yaml') == [top]
+
+    def test_finds_vcr_cassette_directly_under_start(
+        self, engine: PreviewEngine, tmp_path: Path
+    ) -> None:
+        # Regression: pathlib treats '**' as a single '*' level, so a cassette
+        # directly under <start>/cassettes/ did not match '**/cassettes/*.yaml'.
+        f = tmp_path / 'cassettes' / 'example_api.yaml'
+        f.parent.mkdir()
+        f.write_text('interactions: []\n')
+        assert engine.discover_files(tmp_path) == [f]
+
     def test_finds_yaml_in_cassettes_dirs(self, engine: PreviewEngine, tree: Path) -> None:
         found = engine.discover_files(tree)
         assert [f.name for f in found] == ['a.yaml', 'b.yml']
@@ -69,12 +88,13 @@ class TestDiscoverFiles:
     def test_top_level_cassettes_dir_is_not_matched(
         self, engine: PreviewEngine, tmp_path: Path
     ) -> None:
-        # Pins current behaviour: PurePath.match treats '**' as a single '*' level, so a
-        # cassette directly under <start>/cassettes/ does not match '**/cassettes/*.yaml'.
+        # pathlib's match() treats '**' as a single '*' level, so without the
+        # top-level fallback in _should_include a cassette directly under
+        # <start>/cassettes/ would not match '**/cassettes/*.yaml'.
         f = tmp_path / 'cassettes' / 'top.yaml'
         f.parent.mkdir(parents=True)
         f.write_text('interactions: []\n')
-        assert engine.discover_files(tmp_path) == []
+        assert engine.discover_files(tmp_path) == [f]
 
 
 class TestPreviewKey:
@@ -109,12 +129,6 @@ class TestPreviewKey:
         assert result.label is None
         assert result.content == '1'
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason='suspected bug: metadata_keys are resolved relative to the key path parent '
-        '(…response.body), so on the default vcr channel every metadata lookup misses and '
-        'metadata is always {}',
-    )
     def test_default_channel_metadata_is_extracted(
         self, engine: PreviewEngine, cassette_path: Path
     ) -> None:

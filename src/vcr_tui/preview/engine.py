@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +31,25 @@ class PreviewEngine:
         rel_path = path.relative_to(directory)
         if any(part in EXCLUDED_DIRS for part in rel_path.parts):
             return False
-        return rel_path.match(pattern)
+        return rel_path.match(self._relativize_pattern(pattern, directory.name))
+
+    def _relativize_pattern(self, pattern: str, directory_name: str) -> str:
+        """Make a glob pattern match paths relative to the start directory.
+
+        ``PurePath.match`` treats ``**`` as a single ``*`` level, so
+        ``Path('a.yaml').match('**/*.yaml')`` is False and a file directly in
+        the start directory is missed. Likewise ``**/cassettes/*.yaml`` cannot
+        match anything when the start directory *is* the cassettes directory,
+        since there is no ``cassettes`` level below it — so a leading literal
+        segment equal to the start directory's name is dropped as well.
+        """
+        if not pattern.startswith('**/'):
+            return pattern
+        stripped = pattern[3:]
+        prefix = f'{directory_name}/'
+        if stripped.startswith(prefix):
+            return stripped[len(prefix) :]
+        return stripped
 
     def get_keys(self, file_path: Path) -> list[YAMLKey]:
         return get_yaml_keys(file_path)
@@ -137,8 +156,15 @@ class PreviewEngine:
         base_path = self._get_base_path(key_path)
 
         for meta_key in rule.metadata_keys:
-            full_path = f'{base_path}.{meta_key}' if base_path else meta_key
-            value = get_value_at_path(data, full_path)
+            value = None
+            # Metadata keys are relative to the key's parent; if not found there
+            # (e.g. interaction-level status for a `.response.body.string` rule),
+            # walk up the ancestor chain until the key resolves.
+            for candidate in self._ancestor_paths(base_path):
+                full_path = f'{candidate}.{meta_key}' if candidate else meta_key
+                value = get_value_at_path(data, full_path)
+                if value is not None:
+                    break
             if value is not None:
                 metadata[meta_key] = value
 
@@ -147,3 +173,15 @@ class PreviewEngine:
     def _get_base_path(self, key_path: str) -> str:
         parts = key_path.rsplit('.', 1)
         return parts[0] if len(parts) > 1 else ''
+
+    @staticmethod
+    def _ancestor_paths(base_path: str) -> Iterator[str]:
+        """Yield base_path and each of its ancestors, innermost first, then ''.
+
+        Index suffixes are preserved: 'a[0].b.c' -> 'a[0].b.c', 'a[0].b', 'a[0]', ''.
+        """
+        current = base_path
+        while current:
+            yield current
+            parts = current.rsplit('.', 1)
+            current = parts[0] if len(parts) > 1 else ''

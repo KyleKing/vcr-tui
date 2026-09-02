@@ -243,3 +243,6 @@ coverage.json
 
 # jj working state
 /.jj/
+
+# pytest-textual-snapshot report
+snapshot_report.html
