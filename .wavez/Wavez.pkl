@@ -1,0 +1,354 @@
+/// Wavez project config schema (DESIGN.md "Project instructions" and "Gates
+/// (v0.1)"). A project's `.wavez.pkl` amends this module. Wavez writes this
+/// file into the project's `.wavez/` directory on every load, so amend it as
+/// `".wavez/Wavez.pkl"`, not a copy checked into the project.
+///
+/// The typed constructor in every class-valued default below is load-bearing.
+/// A `Mapping` or `Listing` default written as `new Mapping {}` loses its
+/// element type, and every `["name"] { ... }` an amending file writes then
+/// fails to evaluate as a `Dynamic`.
+module wavez.Wavez
+
+/// Files or headed sections (e.g. "AGENTS.md#architecture") that enter the
+/// agent's stable system prefix. Nothing outside this list is read
+/// automatically: Wavez does not auto-load AGENTS.md, CLAUDE.md, .agents/,
+/// or .claude/.
+context: Listing<String> = new Listing {}
+
+/// The model each tier serves, and where. `fast` is the cheap tool-calling
+/// tier, `balanced` does most of the work, and `deep` is for planning and
+/// for what the tier below could not finish. A tier is a role, not a place:
+/// set `baseURL` to serve any of them from another machine, and leave it
+/// empty for the tier's default endpoint.
+fast: Tier = new { model = "qwen3:8b" }
+
+balanced: Tier = new { model = "qwen/qwen3-coder-30b-a3b-instruct" }
+
+deep: Tier = new { model = "qwen/qwen3-coder-30b-a3b-instruct" }
+
+/// Command whose stdout is the API key for any tier dialing a network
+/// endpoint without a `keyCommand` of its own, after the shape of a git
+/// credential helper, so the key never enters the environment or the repo.
+/// Examples: "op read op://vault/item/credential" or
+/// "security find-generic-password -w -s wavez-openrouter". When empty, Wavez
+/// falls back to the OPENROUTER_API_KEY environment variable. Tiers on
+/// different providers each set their own `keyCommand`, since one command
+/// returns one provider's key.
+hostedKeyCommand: String = ""
+
+/// The tier a turn carrying an image goes to. It is separate from fast,
+/// balanced, and deep because seeing is a capability rather than a
+/// difficulty: a text model refuses the whole request rather than ignoring
+/// the image, so no routing decision can reach one. Unset means this project
+/// cannot look at anything, and a tool that would produce an image says so
+/// instead of sending it.
+vision: Tier?
+
+/// Base URL of a SearxNG instance the web search tool queries, such as
+/// "http://searx.example:8888". Empty searches through DuckDuckGo's HTML
+/// endpoint, which needs no key and no service and breaks whenever their
+/// markup changes. Either way no key is stored and no account is used.
+webSearchURL: String = ""
+
+/// Whether the web search and fetch tools are offered at all. Off by
+/// default: the pair costs 217 tokens out of every turn's context, and a
+/// project that never asks about the world outside it should not be able
+/// to reach the network at all. Turn it on for one that does.
+web: Boolean = false
+
+/// Served context window, in tokens, of a llama-server Wavez starts for the
+/// fast tier. Wavez starts the server with it, moves a turn up a tier once
+/// the request plus reply room would not fit it, and compacts against it. A
+/// per-model context size set on the models screen overrides it for that
+/// model.
+contextWindow: Int = 8192
+
+/// One-minute load average per core at or above which a tier with an
+/// `overflow` endpoint sends its turns there instead. An idle laptop reads
+/// about 0.2 and one running the full check suite reads above 1, so the
+/// default sits between them with room on both sides.
+overflowLoadPerCore: Float = 0.7
+
+/// Loopback port llama-server serves the fast tier's model on. Wavez reuses
+/// a server already answering there instead of starting a second one, since
+/// only one model fits in 16 GB.
+localPort: Int = 8080
+
+/// Seconds to wait for a started llama-server to report ready.
+localStartTimeoutSeconds: Int = 60
+
+/// Wall-clock seconds one run may take before the harness stops it. It is the
+/// only bound a daemon thread has on time, since the caps a headless run takes
+/// as flags never reach one. Zero keeps the built-in default.
+maxRunSeconds: Int = 0
+
+/// Free-memory fraction at or above which a turn on the local model and a
+/// gate run may overlap. Below it the scheduler serializes the two, since only
+/// one model fits in 16 GB. Measured on this laptop: qwen3:8b loaded leaves
+/// ~31% free, which is enough for a Go suite, while gemma4:12b leaves 14-18%,
+/// which is not.
+admissionHeadroom: Float = 0.25
+
+/// Minutes a write lease on a directory subtree survives without being
+/// renewed. It is the backstop for a thread that died mid-write, which nothing
+/// else cleans up.
+leaseTtlMinutes: Int = 30
+
+/// Extra directories, beyond the project root, the agent may read and write.
+extraDirs: Listing<String> = new Listing {}
+
+/// Shell commands, named without a path, that run without asking. They widen
+/// a built-in list holding the toolchain a Go project uses and the read-only
+/// commands around it; anything on neither list needs one approval, which is
+/// remembered for the thread. Naming a command here does not override a rule
+/// that refuses it.
+shellAllow: Listing<String> = new Listing {}
+
+/// Gate debounce, in milliseconds, before a batch of changes runs.
+debounceMs: Int = 500
+
+/// Selective gate passes allowed before a full run is forced.
+fullRunCadence: Int = 20
+
+/// Glob patterns for ast-grep convention rule files.
+astGrepRules: Listing<String> = new Listing {}
+
+/// Checks this project runs on its own changes, by name. Every built-in gate
+/// speaks Go, so a project in another language reaches the model with nothing
+/// behind its edits until it declares one here.
+checks: Mapping<String, Check> = new Mapping<String, Check> {}
+
+/// Functions `wavez -deadcode` should not report, as `package.Function`
+/// globs. A function no main reaches is not always a mistake: functional
+/// options and test seams are reachable only from tests by design, and the
+/// analyzer ignores tests on purpose.
+deadcodeAllow: Listing<String> = new Listing {
+  "*.With*"
+}
+
+/// Command run before every tool call, as an argv with the program first. It
+/// is executed directly, never through a shell. It reads a JSON payload on
+/// stdin (event, tool, input, paths) and answers with its exit status: 0
+/// allows, 2 refuses, and every other status refuses as a failed hook. A hook
+/// that times out, cannot start, or is killed refuses too, so breaking the
+/// hook is never a way to widen what the agent may do. Its stdout and stderr
+/// go to the thread's event log and never to the model. Empty means no hook
+/// and no hook process.
+/// Example: new Listing { ".wavez/hooks/pre-tool-use.sh" }
+preToolUseHook: Listing<String> = new Listing {}
+
+/// Command run after every tool call, as an argv with the program first. The
+/// payload adds the tool's result and whether it errored. The tool has already
+/// run, so this hook reports and cannot refuse: a nonzero exit or a timeout is
+/// logged and the run continues.
+postToolUseHook: Listing<String> = new Listing {}
+
+/// Milliseconds one hook process may run before it is killed.
+hookTimeoutMs: Int = 5000
+
+/// When a routine fires. "change" runs it on the same debounced batch the
+/// gates run on, "manual" only when a client asks, "schedule" every
+/// `intervalSeconds`, "thread-start" once when a thread runs its first turn,
+/// and "thread-finish" as each run ends, on the run's own goroutine.
+typealias Trigger = "change"|"manual"|"schedule"|"thread-start"|"thread-finish"
+
+/// What happens to a run that arrives while its concurrency key is busy.
+/// "queue" waits its turn, "cancel-in-progress" stops the running instance
+/// and takes its place, and "round-robin" admits waiting routines in
+/// rotation so one firing repeatedly cannot starve another on the same key.
+typealias Concurrency = "queue"|"cancel-in-progress"|"round-robin"
+
+/// One node of a routine's DAG.
+/// One model tier: which model answers, and the OpenAI-compatible endpoint
+/// it is served from.
+class Tier {
+  /// Model name sent in the request.
+  model: String
+
+
+  /// OpenAI-compatible endpoint root (e.g. "https://m4.tailnet.ts.net/v1").
+  /// Empty means the tier's default: the llama-server on localPort for the
+  /// fast tier, OpenRouter for the others. A tier pointed at another machine
+  /// fails the turn when that machine is down rather than loading a model
+  /// here, and the memory headroom the daemon measures still describes this
+  /// laptop.
+  ///
+  /// The host decides which provider-specific keys the request carries:
+  /// "openrouter.ai" sends OpenRouter's `reasoning` and its data-collection
+  /// denial, "api.z.ai" and "open.bigmodel.cn" send Z.AI's `thinking`, and
+  /// anything else is treated as a llama-server. Z.AI's coding plan serves
+  /// only "https://api.z.ai/api/coding/paas/v4"; its general
+  /// "/api/paas/v4" root refuses a coding-plan key.
+  baseURL: String = ""
+
+  /// Command whose stdout is this tier's bearer token, overriding
+  /// hostedKeyCommand. Empty means the loopback server needs none and any
+  /// other endpoint falls back to hostedKeyCommand.
+  keyCommand: String = ""
+
+  /// Whether a hybrid model reasons on this tier's turns. Null leaves the
+  /// served model's own default, which is on for the qwen3 hybrids and for
+  /// Z.AI's GLM models: one
+  /// four-lane run measured 930 output tokens a turn with it against 190
+  /// without, nearly all of it a trace no tool reads. Set it false on a tier
+  /// that only calls tools.
+  thinking: Boolean?
+
+  /// Where this tier's turns go while the machine is too busy to serve them
+  /// here, checked once per turn. Decode rate on a local server is the
+  /// laptop's to lose: one replay lane recorded 2.1 output tokens per second
+  /// against a median of 25 because a gate run and a test suite were running
+  /// beside it. Null keeps every turn on `baseURL` however loaded the
+  /// machine is, which is right for a tier already served over the network.
+  overflow: Tier?
+}
+
+/// One check a project runs on its own changes.
+class Check {
+  /// Globs whose change runs this check, matched against the whole path and
+  /// then against the base name, so `*.py` names every Python file. An empty
+  /// list runs the check on every change.
+  paths: Listing<String> = new Listing {}
+
+  /// The command line, run through `sh -c` from the project root. A non-zero
+  /// exit is the failure the model is handed, trimmed to the lines naming a
+  /// file the run changed.
+  command: String
+}
+
+/// One long-running service a routine step can bring up and take down.
+class Service {
+  /// Argv that starts it, run from `dir` and never through a shell.
+  up: Listing<String> = new Listing {}
+
+  /// Argv that stops it, run when the last holder releases it.
+  down: Listing<String> = new Listing {}
+
+  /// Argv that exits zero once the service can be used, retried until it
+  /// does. Without one, `up` returning is all the readiness there is, which
+  /// is enough for a program that blocks until it is listening and not
+  /// enough for anything that forks.
+  ready: Listing<String> = new Listing {}
+
+  /// Directory to run all three from, relative to the project root.
+  dir: String = "."
+
+  /// How long one of the three may take.
+  timeoutMs: Int = 300000
+
+  /// How long to keep retrying `ready` before the step that wanted the
+  /// service fails.
+  readyWaitMs: Int = 300000
+}
+
+class Step {
+  /// Unique within the routine, and the name other steps put in `parents`.
+  name: String
+
+  /// Registered action this step invokes. An unknown action, or one whose
+  /// parameters do not validate, fails the config load rather than the run.
+  action: String
+
+  /// Parameters for `action`, checked by that action's validator at load.
+  params: Mapping<String, Any> = new Mapping<String, Any> {}
+
+  /// Steps that must finish before this one starts. Steps with no
+  /// unfinished parent run concurrently.
+  parents: Listing<String> = new Listing<String> {}
+}
+
+/// A named DAG of actions. No model is involved in a routine.
+class Routine {
+  triggers: Listing<Trigger> = new Listing<Trigger> {}
+
+  /// Glob patterns, matched against a changed file's repo-relative path,
+  /// that narrow a "change" trigger. Empty matches every change.
+  paths: Listing<String> = new Listing<String> {}
+
+  /// Seconds between runs under the "schedule" trigger, at least 30, and
+  /// counted from the end of the last run so a routine never queues behind
+  /// itself. Ignored without that trigger.
+  intervalSeconds: Int = 0
+
+  steps: Listing<Step> = new Listing<Step> {}
+
+  /// Runs sharing a key never overlap. Empty means the routine's own name.
+  concurrencyKey: String = ""
+
+  concurrency: Concurrency = "queue"
+
+  /// A disabled routine stays readable in the file and never runs.
+  enabled: Boolean = true
+}
+
+/// Routines this project defines. Gates ship as built-in routines under
+/// their gate names, and so does `semgrep`, which ships disabled. A routine
+/// named here overrides the built-in of that name, keeping the built-in's
+/// steps when it declares none: to turn a gate off, declare it with
+/// `enabled = false`, and to opt into `semgrep`, declare it with
+/// `enabled = true`.
+routines: Mapping<String, Routine> = new Mapping<String, Routine> {}
+
+/// Long-running things a routine can hold while it works: a compose target, a
+/// database, a fake API. They are declared rather than left running because
+/// the expensive ones should be up only while something needs them, and the
+/// harness counts holders so two routines share one and the first to finish
+/// does not take it from the second.
+services: Mapping<String, Service> = new Mapping<String, Service> {}
+
+/// One phase of a Cycle: what the model is told to achieve, the tools it may
+/// call, and the condition the harness evaluates before the cycle advances.
+class Phase {
+  /// Phase name, shown in the thread log.
+  name: String
+
+  /// The standing instruction for this phase. It is the whole prompt the
+  /// phase starts from, beside the change set and the ledger.
+  goal: String
+
+  /// Exit condition, by name. Wavez ships "artifact-fails" (a test the change
+  /// set declares fails on the current tree), "artifact-passes-gates-green"
+  /// (they all pass and the phase's gates were green), and "sweep-accounted"
+  /// (a recorded structural sweep has every hit fixed or dismissed with a
+  /// reason, or names a durable artifact instead). A condition the harness
+  /// cannot evaluate would be a claim, which is why this is a fixed list.
+  exit: String(this == "artifact-fails" || this == "artifact-passes-gates-green" || this == "sweep-accounted")
+
+  /// Tools this phase may call. Narrowing is a routing lever rather than a
+  /// fence: a narrow phase is a job a small local model can drive, and the
+  /// exit condition is what makes cheating harder than working.
+  tools: Listing<String> = new Listing {}
+
+  /// How many times this phase's loop may run before the cycle ends with the
+  /// condition unmet.
+  maxAttempts: Int = 2
+
+  /// Whether this phase's loop verifies its change set against the gates
+  /// before completing. A phase whose product is a failing test leaves it off.
+  gated: Boolean = true
+}
+
+/// A named, reusable, phased way of working on a class of problem. A cycle
+/// named here replaces a built-in of the same name outright.
+class Cycle {
+  name: String
+  phases: Listing<Phase>
+}
+
+/// Cycles this project can run, beside the built-in fix cycle.
+cycles: Listing<Cycle> = new Listing<Cycle> {}
+
+/// One identifier-linking rule: text matching `pattern` renders as a
+/// hyperlink to `url`, which may reference the pattern's capture groups with
+/// Go `regexp.Expand` syntax (`$1`).
+class LinkPattern {
+  pattern: String
+  url: String
+}
+
+/// PR numbers, issue keys, and ticket ids this project links in the
+/// transcript and in `-p` output. Repo entries take precedence over the
+/// per-laptop user config on a clash; a pattern that fails to compile as a
+/// Go regexp fails the config load.
+/// Example: new LinkPattern { pattern = "#(\\d+)"; url = "https://github.com/kyleking/wavez/pull/$1" }
+links: Listing<LinkPattern> = new Listing<LinkPattern> {}

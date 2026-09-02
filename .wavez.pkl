@@ -1,0 +1,77 @@
+amends ".wavez/Wavez.pkl"
+
+// Every built-in gate speaks Go, so a Python project has nothing behind its
+// edits until it declares its own. These are the four commands this project's
+// CI would run, in the order a failure is cheapest to read.
+checks {
+  ["format"] {
+    paths = new Listing { "*.py" }
+    command = "uv run ruff format --check ."
+  }
+  ["lint"] {
+    paths = new Listing { "*.py" }
+    command = "uv run ruff check ."
+  }
+  ["types"] {
+    paths = new Listing { "*.py" }
+    command = "uv run ty check src tests"
+  }
+  ["test"] {
+    paths = new Listing { "*.py"; "*.toml" }
+    command = "uv run pytest -q"
+  }
+}
+
+// The toolchain a uv project runs, which the built-in list (a Go toolchain and
+// the read-only commands around it) does not name.
+shellAllow = new Listing {
+  "pytest"
+  "python"
+  "python3"
+  "ruff"
+  "ty"
+  "uv"
+  "uvx"
+}
+
+// A lane here is a Textual widget, its test, and the golden frames beside it,
+// and the built-in ten minutes stops one mid-change.
+maxRunSeconds = 2400
+
+local zaiBase = "https://api.z.ai/api/coding/paas/v4"
+
+local zaiKey = "security find-generic-password -w -s wavez-zai"
+
+fast = new {
+  model = "qwen3:8b"
+  thinking = false
+  overflow = new {
+    model = "glm-4.7-flash"
+    baseURL = zaiBase
+    keyCommand = zaiKey
+    thinking = false
+  }
+}
+
+balanced = new {
+  model = "glm-5.3"
+  baseURL = zaiBase
+  keyCommand = zaiKey
+  thinking = false
+}
+
+deep = new {
+  model = "glm-5.3"
+  baseURL = zaiBase
+  keyCommand = zaiKey
+  thinking = true
+}
+
+vision = new Tier {
+  model = "glm-4.6v"
+  baseURL = zaiBase
+  keyCommand = zaiKey
+  thinking = false
+}
+
+contextWindow = 8192

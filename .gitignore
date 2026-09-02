@@ -1,1 +1,10 @@
 *.pyc
+.codegraph/
+
+# wavez runtime state. Wavez.pkl is deliberately tracked: .wavez.pkl amends it,
+# so anything evaluating the config needs it on disk.
+/.wavez/*
+!/.wavez/Wavez.pkl
+
+# jj working state
+/.jj/
