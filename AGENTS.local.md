@@ -45,5 +45,10 @@ These direct `uv run` commands are the project's gates; `./run` (calcipy)
 is a convenience wrapper, not the source of truth. It becomes the gate only
 if/when the project adopts the calcipy ruff standard.
 
+The environment is fixed while you work: there is no network, so `uv sync`,
+`uv add`, and `uv run --with` cannot fetch anything, and trying leaves the
+venv worse than it was. Use what is installed and say what you would need
+rather than installing it.
+
 Keep `src/vcr_tui/preview/` free of UI imports — it is the testable core.
 The TUI (`ui/`) should only consume it.
