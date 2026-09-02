@@ -41,5 +41,9 @@ Checks (run via `uv run`):
 - **ty** — type checking: `uv run ty check src`
 - **pytest** — tests, asyncio auto mode: `uv run pytest`
 
+These direct `uv run` commands are the project's gates; `./run` (calcipy)
+is a convenience wrapper, not the source of truth. It becomes the gate only
+if/when the project adopts the calcipy ruff standard.
+
 Keep `src/vcr_tui/preview/` free of UI imports — it is the testable core.
 The TUI (`ui/`) should only consume it.

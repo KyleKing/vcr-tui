@@ -11,8 +11,8 @@ Run `./run main` before reporting work as done.
 
 ## Layout
 
-- Source lives in `vcr_tui/` and tests under `tests/`
-- Docs live in `docs/docs/` and build with mkdocs
+- Source lives in `src/vcr_tui/` (src layout) and tests under `tests/`
+- Docs live in `docs/` and build with mkdocs (`mkdocs.yml`; API docs watch `src/vcr_tui`)
 
 ## Conventions
 

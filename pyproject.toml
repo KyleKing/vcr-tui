@@ -16,7 +16,6 @@ authors = [
 classifiers = [
   "Development Status :: 1 - Planning",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -50,7 +49,7 @@ vcr-tui = "vcr_tui.cli:main"
 
 [tool.commitizen]
 pre_bump_hooks = ["uv lock"]
-version = "0.0.1"
+version = "0.1.0"
 version_files = ["pyproject.toml:^version", "src/vcr_tui/__init__.py:^__version"]
 
 [tool.mypy]

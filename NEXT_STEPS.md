@@ -2,20 +2,35 @@
 
 A prioritized roadmap written from the actual state of the tree: ~900 lines of
 working code in `src/vcr_tui` (CLI + Textual TUI for previewing VCR cassettes),
-one fixture cassette in `fixtures/cassettes/example_api.yaml`, and **zero
-tests** — `tests/` contains only empty `__init__.py` files.
+one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 56 passing
+tests covering `preview/formatters.py` and `preview/yaml_parser.py` only.
 
-## 1. Tests (highest priority)
+## 0. Template adoption follow-ups
 
-There is no test coverage at all. Add tests in this order, using the existing
-fixture cassette:
+The calcipy_template was adopted (`.copier-answers.yml`, `./run` task runner,
+mkdocs docs, pre-commit, nox, commitizen, uv build backend with `src/` layout).
+Still open from that migration:
 
-- **`preview/yaml_parser.py`** — pure logic, easiest wins: `load_yaml`,
-  `get_yaml_keys`, `get_value_at_path` (dict access, list indexing, missing
-  keys, the `.` root path).
-- **`preview/formatters.py`** — `format_content` for all five formatters
-  (`json`, `yaml`, `text`, `html`, `toml`), including the string-with-embedded
-  JSON case and malformed input fallbacks.
+- `docs/README.md` still carries the template's placeholder text (`poetry add
+  vcr_tui`, TODO example) while root `README.md` is real — rewrite the docs
+  copy to match.
+- `pyproject.toml` carries both a `[tool.mypy]` config and the project's `ty`
+  type checker; align on one and remove the stale config.
+- ~~Decide whether gates run via `./run main` (calcipy tasks) or direct
+  `uv run ruff/ty/pytest`~~ — decided: gates are `uv run ruff check .`,
+  `uv run ty check src`, and `uv run pytest` (see AGENTS.local.md). `./run`
+  stays as the calcipy convenience wrapper until this project adopts the
+  calcipy ruff standard; revisit only then.
+- Ruff currently uses this project's narrow `select` list; migrating to the
+  calcipy `select = ['ALL']` standard is ~155 fixes, mostly docstrings.
+
+## 1. Tests
+
+Covered so far: `preview/formatters.py` (`test_formatters.py`) and
+`preview/yaml_parser.py` (`test_yaml_parser.py`) — 56 tests plus the
+template's version smoke test. Still to write, in this order, using the
+existing fixture cassette:
+
 - **`preview/engine.py`** — `discover_files` against a `tmp_path` tree
   (including `EXCLUDED_DIRS` filtering), `preview_key` / `preview_file` with
   the default `vcr` channel, `_path_matches_rule` edge cases, metadata
@@ -24,10 +39,9 @@ fixture cassette:
   (defaults → global → local files, `root = true` stopping the upward walk).
 - **CLI** — `files`, `keys`, `preview`, `channels` via `click.testing.CliRunner`.
 - **UI** — snapshot tests with `pytest-textual-snapshot` (already a dev
-  dependency) for `MainScreen` and the four widgets.
-
-Note: `pyproject.toml` configures mypy, not `ty`; align whichever type checker
-is actually in use and remove the stale one.
+  dependency) for `MainScreen` and the four widgets. `tests/test_ui`,
+  `tests/integration`, and `tests/test_config` currently hold only empty
+  `__init__.py` files.
 
 ## 2. Real bugs and rough edges found in the code
 
@@ -61,10 +75,11 @@ is actually in use and remove the stale one.
 ## 4. Housekeeping
 
 - `src/vcr_tui/utils/` is an empty package — delete or use it.
-- The `tests/` tree has empty `__init__.py` files in directories with no
-  tests; keep the structure only as tests are actually added.
+- Stray empty `__init__.py` files in `tests/test_ui`, `tests/test_config`,
+  `tests/integration` (directories with no tests); keep the structure only as
+  tests are actually added.
 - `fixtures/cassettes/example_api.yaml` is used nowhere in the code — make it
-  the shared fixture for the test suite (item 1).
+  the shared fixture for the test suite.
 - Stray top-level docs (`textual-guide.md`, `textual-quick-reference.md`,
   `gemini-deep-research.txt`, `SKILLS_SUMMARY.md`, `.freshen.md`) duplicate or
   predate the real code; consider pruning.
