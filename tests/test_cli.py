@@ -37,12 +37,14 @@ class TestFiles:
     def test_lists_cassette_relative_paths(self, runner: CliRunner, workspace: Path) -> None:
         result = runner.invoke(main, [str(workspace), 'files'])
         assert result.exit_code == 0
-        assert result.output.strip() == 'proj/cassettes/example_api.yaml'
+        expected = str(Path('proj') / 'cassettes' / 'example_api.yaml')
+        assert result.output.strip() == expected
 
     def test_yaml_channel_lists_all_yaml(self, runner: CliRunner, workspace: Path) -> None:
         result = runner.invoke(main, ['--channel', 'yaml', str(workspace), 'files'])
         assert result.exit_code == 0
-        assert 'proj/cassettes/example_api.yaml' in result.output
+        expected = str(Path('proj') / 'cassettes' / 'example_api.yaml')
+        assert expected in result.output
 
     def test_unknown_channel_lists_nothing(self, runner: CliRunner, workspace: Path) -> None:
         result = runner.invoke(main, ['-c', 'nope', str(workspace), 'files'])
