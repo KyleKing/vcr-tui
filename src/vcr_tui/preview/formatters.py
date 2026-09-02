@@ -40,7 +40,10 @@ def _format_json(content: Any) -> str:
 def _format_yaml(content: Any) -> str:
     stream = StringIO()
     _yaml.dump(content, stream)
-    return stream.getvalue().rstrip()
+    text = stream.getvalue().rstrip()
+    # A bare scalar (str/int/...) is emitted with a trailing "..." document-end
+    # marker on its own line, which is noise in a preview; drop it.
+    return text.removesuffix("\n...")
 
 
 def _format_text(content: Any) -> str:
@@ -64,4 +67,9 @@ def _format_html(content: Any) -> str:
 def _format_toml(content: Any) -> str:
     if isinstance(content, str):
         return content
-    return tomli_w.dumps(content)
+    try:
+        return tomli_w.dumps(content)
+    except Exception:
+        # tomli_w only writes tables; fall back to a plain representation for
+        # anything else (scalars, lists of scalars, mixed data).
+        return str(content)

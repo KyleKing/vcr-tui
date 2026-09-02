@@ -37,10 +37,8 @@ class TestFormatYaml:
         assert result == "version: 1\nnested:\n  a: true"
 
     def test_string_content_is_dumped_as_scalar(self):
-        # NOTE: pins current behaviour. ruamel emits a trailing "..." document-end
-        # marker when dumping a bare scalar, and _format_yaml only rstrips whitespace,
-        # so the marker leaks into the preview. Suspected bug, not fixed here.
-        assert format_content("hello", "yaml") == "hello\n..."
+        # No document-end marker for a bare scalar.
+        assert format_content("hello", "yaml") == "hello"
 
 
 class TestFormatText:
@@ -82,6 +80,10 @@ class TestFormatTomL:
             'version = 1\nname = "cassette"\n'
         )
 
+    def test_non_table_content_falls_back_to_verbatim_instead_of_raising(self):
+        assert format_content(1, "toml") == "1"
+        assert format_content([1, 2], "toml") == "[1, 2]"
+
     def test_string_is_returned_verbatim(self):
         assert format_content(EMBEDDED_JSON, "toml") == EMBEDDED_JSON
 
@@ -99,19 +101,13 @@ class TestFormatContentWithCassetteData:
     def test_scalar_paths(self, cassette_data, path, formatter, expected):
         assert format_content(get_value_at_path(cassette_data, path), formatter) == expected
 
-    def test_yaml_scalar_path_gains_document_end_marker(self, cassette_data):
-        # NOTE: pins current behaviour — a bare scalar dumped as YAML picks up a
-        # trailing "..." document-end marker (see TestFormatYaml).
+    def test_yaml_scalar_path_has_no_document_end_marker(self, cassette_data):
         version = get_value_at_path(cassette_data, "version")
-        assert format_content(version, "yaml") == "1\n..."
+        assert format_content(version, "yaml") == "1"
 
-    def test_toml_scalar_path_raises(self, cassette_data):
-        # NOTE: pins current behaviour — tomli_w only accepts tables, so previewing
-        # a scalar leaf with the toml formatter crashes with AttributeError instead
-        # of falling back to str(). Real bug, not fixed here.
+    def test_toml_scalar_path_falls_back_to_verbatim(self, cassette_data):
         version = get_value_at_path(cassette_data, "version")
-        with pytest.raises(AttributeError, match="'int' object has no attribute 'items'"):
-            format_content(version, "toml")
+        assert format_content(version, "toml") == "1"
 
     def test_response_body_json_round_trip(self, cassette_data):
         body = get_value_at_path(cassette_data, "interactions[0].response.body.string")

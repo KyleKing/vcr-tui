@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any
 
 from textual.message import Message
-from textual.reactive import reactive
 from textual.widgets import OptionList
 from textual.widgets.option_list import Option
 
@@ -14,8 +13,6 @@ class FileSelected(Message):
 
 
 class FileListWidget(OptionList):
-    files: reactive[list[Path]] = reactive(list, init=False)
-
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._files: list[Path] = []
