@@ -1,6 +1,6 @@
 import json
 from io import StringIO
-from typing import Any
+from typing import Any, assert_never
 
 import tomli_w
 from ruamel.yaml import YAML
@@ -24,7 +24,7 @@ def format_content(content: Any, formatter: FormatterType) -> str:
         case 'toml':
             return _format_toml(content)
         case _:
-            return str(content)
+            assert_never(formatter)
 
 
 def _format_json(content: Any) -> str:

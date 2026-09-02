@@ -1,6 +1,7 @@
 """Tests for preview/engine.py."""
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from ruamel.yaml import YAML
@@ -227,7 +228,7 @@ class TestMetadataExtraction:
         ],
     )
     def test_metadata_resolved_relative_to_key_parent(
-        self, tmp_path: Path, key_path: str, expected: dict
+        self, tmp_path: Path, key_path: str, expected: dict[str, Any]
     ) -> None:
         data = {
             'users': [

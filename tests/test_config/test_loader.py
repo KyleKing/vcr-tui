@@ -46,7 +46,7 @@ class TestFindConfigFiles:
     def test_root_true_stops_the_walk(self, tmp_path: Path) -> None:
         # Files above the root=true file are never reached; ones below it still are.
         outer = _write_config(tmp_path / 'vcr-tui.toml', '')
-        assert outer
+        assert outer.is_file()
         mid = tmp_path / 'proj'
         mid.mkdir()
         root_flag = _write_config(mid / 'vcr-tui.toml', 'root = true\n')

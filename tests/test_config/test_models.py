@@ -1,5 +1,7 @@
 """Tests for config models: from_dict and merge."""
 
+from typing import Any
+
 import pytest
 
 from vcr_tui.config.models import Channel, Config, ExtractionRule
@@ -52,7 +54,7 @@ class TestFromDict:
             ),
         ],
     )
-    def test_from_dict(self, data: dict, expected: Config) -> None:
+    def test_from_dict(self, data: dict[str, Any], expected: Config) -> None:
         assert Config.from_dict(data) == expected
 
     def test_channel_defaults(self) -> None:
