@@ -34,7 +34,7 @@ description = "TUI for previewing VCR cassettes and machine-generated files"
 keywords = ["calcipy_template", "tui", "vcr", "textual"]
 license = "MIT"
 maintainers = []
-name = "vcr-tui"
+name = "vcr_tui"
 readme = "README.md"
 requires-python = ">=3.11.0"
 version = "0.1.0"
