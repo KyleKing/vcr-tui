@@ -21,13 +21,15 @@ A quick reference for common patterns and operations in Textual TUI applications
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static
 
+
 class MyApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static("Hello, Textual!")
+        yield Static('Hello, Textual!')
         yield Footer()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     MyApp().run()
 ```
 
@@ -38,34 +40,38 @@ from textual.app import App, ComposeResult
 from textual.screen import Screen
 from textual.widgets import Header, Footer, Button
 
+
 class MainScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Button("Go to Settings", id="settings-btn")
+        yield Button('Go to Settings', id='settings-btn')
         yield Footer()
 
     def on_button_pressed(self) -> None:
-        self.app.push_screen("settings")
+        self.app.push_screen('settings')
+
 
 class SettingsScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Button("Back", id="back-btn")
+        yield Button('Back', id='back-btn')
         yield Footer()
 
     def on_button_pressed(self) -> None:
         self.app.pop_screen()
 
+
 class MyApp(App):
     SCREENS = {
-        "main": MainScreen,
-        "settings": SettingsScreen,
+        'main': MainScreen,
+        'settings': SettingsScreen,
     }
 
     def on_mount(self) -> None:
-        self.push_screen("main")
+        self.push_screen('main')
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     MyApp().run()
 ```
 
@@ -75,15 +81,17 @@ if __name__ == "__main__":
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static
 
+
 class MyApp(App):
-    CSS_PATH = "app.tcss"  # External CSS file
+    CSS_PATH = 'app.tcss'  # External CSS file
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static("Styled content", id="content")
+        yield Static('Styled content', id='content')
         yield Footer()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     MyApp().run()
 ```
 
@@ -95,6 +103,7 @@ if __name__ == "__main__":
 
 ```python
 from textual.widget import Widget
+
 
 class MyWidget(Widget):
     def __init__(self, **kwargs) -> None:
@@ -136,12 +145,13 @@ class MyWidget(Widget):
 ```python
 from textual.widgets import Button, Input
 
+
 class MyWidget(Widget):
     # Method naming: on_<widget>_<event>
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle any button press in this widget."""
         button = event.button
-        self.log(f"Button {button.id} pressed")
+        self.log(f'Button {button.id} pressed')
 
     # Or handle specific widget
     async def on_input_changed(self, event: Input.Changed) -> None:
@@ -152,7 +162,7 @@ class MyWidget(Widget):
     # Generic event handler
     def on_key(self, event: events.Key) -> None:
         """Handle key presses."""
-        if event.key == "escape":
+        if event.key == 'escape':
             self.app.exit()
 ```
 
@@ -341,12 +351,13 @@ $primary-muted
 ```python
 from textual.reactive import reactive
 
+
 class Counter(Widget):
     # Basic reactive
     count = reactive(0)
 
     def render(self) -> str:
-        return f"Count: {self.count}"
+        return f'Count: {self.count}'
 
     # With validation
     age = reactive(0)
@@ -355,11 +366,11 @@ class Counter(Widget):
         return max(0, min(value, 120))
 
     # With watcher
-    status = reactive("idle")
+    status = reactive('idle')
 
     def watch_status(self, old: str, new: str) -> None:
-        if new == "error":
-            self.add_class("error-state")
+        if new == 'error':
+            self.add_class('error-state')
 
     # Computed property
     doubled = reactive(0)
@@ -368,10 +379,10 @@ class Counter(Widget):
         return self.count * 2
 
     # With recompose
-    mode = reactive("list", recompose=True)
+    mode = reactive('list', recompose=True)
 
     def compose(self) -> ComposeResult:
-        if self.mode == "list":
+        if self.mode == 'list':
             yield ListView()
         else:
             yield GridView()
@@ -382,9 +393,11 @@ class Counter(Widget):
 ```python
 from textual.message import Message
 
+
 class MyWidget(Widget):
     class Updated(Message):
         """Posted when widget updates."""
+
         def __init__(self, value: str) -> None:
             super().__init__()
             self.value = value
@@ -393,10 +406,11 @@ class MyWidget(Widget):
         self.value = value
         self.post_message(self.Updated(value))
 
+
 # Parent handles the message
 class ParentWidget(Widget):
     def on_my_widget_updated(self, message: MyWidget.Updated) -> None:
-        self.log(f"Widget updated: {message.value}")
+        self.log(f'Widget updated: {message.value}')
 ```
 
 ### Actions and Key Bindings
@@ -404,9 +418,9 @@ class ParentWidget(Widget):
 ```python
 class MyApp(App):
     BINDINGS = [
-        ("ctrl+s", "save", "Save"),
-        ("ctrl+q", "quit", "Quit"),
-        ("?", "help", "Help"),
+        ('ctrl+s', 'save', 'Save'),
+        ('ctrl+q', 'quit', 'Quit'),
+        ('?', 'help', 'Help'),
     ]
 
     def action_save(self) -> None:
@@ -415,26 +429,28 @@ class MyApp(App):
 
     def action_help(self) -> None:
         """Show help screen."""
-        self.push_screen("help")
+        self.push_screen('help')
+
 
 # Widget-specific bindings
 class MyWidget(Widget):
     BINDINGS = [
-        ("enter", "select", "Select"),
-        ("escape", "cancel", "Cancel"),
+        ('enter', 'select', 'Select'),
+        ('escape', 'cancel', 'Cancel'),
     ]
 
     def action_select(self) -> None:
-        self.log("Selected!")
+        self.log('Selected!')
 
     def action_cancel(self) -> None:
-        self.log("Cancelled!")
+        self.log('Cancelled!')
 ```
 
 ### Workers for Async Operations
 
 ```python
 from textual.worker import work
+
 
 class MyWidget(Widget):
     @work(exclusive=True)  # Cancel previous if still running
@@ -460,6 +476,7 @@ class MyWidget(Widget):
 from textual.screen import ModalScreen
 from textual.containers import Vertical, Horizontal
 
+
 class ConfirmDialog(ModalScreen[bool]):
     """Type-safe confirmation dialog."""
 
@@ -468,14 +485,15 @@ class ConfirmDialog(ModalScreen[bool]):
         self.message = message
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="dialog"):
+        with Vertical(id='dialog'):
             yield Static(self.message)
             with Horizontal():
-                yield Button("Yes", id="yes", variant="primary")
-                yield Button("No", id="no")
+                yield Button('Yes', id='yes', variant='primary')
+                yield Button('No', id='no')
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        self.dismiss(event.button.id == "yes")
+        self.dismiss(event.button.id == 'yes')
+
 
 # Usage
 class MyApp(App):
@@ -484,10 +502,7 @@ class MyApp(App):
             if confirmed:
                 self.delete_item()
 
-        self.push_screen(
-            ConfirmDialog("Are you sure?"),
-            check_confirm
-        )
+        self.push_screen(ConfirmDialog('Are you sure?'), check_confirm)
 ```
 
 ### Data Binding
@@ -499,14 +514,15 @@ class ParentWidget(Widget):
     def compose(self) -> ComposeResult:
         child = ChildWidget()
         # Bind child's display to parent's value
-        child.data_bind(self, display="value")
+        child.data_bind(self, display='value')
         yield child
+
 
 class ChildWidget(Widget):
     display = reactive(0)
 
     def render(self) -> str:
-        return f"Value: {self.display}"
+        return f'Value: {self.display}'
 ```
 
 ### Timers and Intervals
@@ -521,10 +537,10 @@ class MyWidget(Widget):
         self.set_interval(1, self.periodic_update)
 
     def delayed_action(self) -> None:
-        self.log("Timer fired!")
+        self.log('Timer fired!')
 
     def periodic_update(self) -> None:
-        self.log("Updating...")
+        self.log('Updating...')
 ```
 
 ### Query Widgets
@@ -533,26 +549,26 @@ class MyWidget(Widget):
 class MyWidget(Widget):
     def find_widgets(self) -> None:
         # Get one widget by ID
-        button = self.query_one("#submit", Button)
+        button = self.query_one('#submit', Button)
 
         # Get one widget by type
         header = self.query_one(Header)
 
         # Get multiple widgets
-        buttons = self.query("Button")
+        buttons = self.query('Button')
 
         # Refinement
-        first_button = self.query("Button").first()
-        last_button = self.query("Button").last()
+        first_button = self.query('Button').first()
+        last_button = self.query('Button').last()
 
         # Filter
-        enabled = self.query("Button").filter(".enabled")
+        enabled = self.query('Button').filter('.enabled')
 
         # Exclude
-        not_disabled = self.query("Button").exclude(".disabled")
+        not_disabled = self.query('Button').exclude('.disabled')
 
         # Iterate
-        for button in self.query("Button"):
+        for button in self.query('Button'):
             button.disabled = True
 ```
 
@@ -566,6 +582,7 @@ from textual.containers import (
     Center,
     Container,
 )
+
 
 class MyScreen(Screen):
     def compose(self) -> ComposeResult:
@@ -600,6 +617,7 @@ class MyScreen(Screen):
 import pytest
 from my_app import MyApp
 
+
 @pytest.mark.asyncio
 async def test_app_loads():
     """Test that app loads successfully."""
@@ -618,13 +636,13 @@ async def test_button_click():
     app = MyApp()
     async with app.run_test() as pilot:
         # Click button by ID
-        await pilot.click("#submit")
+        await pilot.click('#submit')
 
         # Wait for messages to process
         await pilot.pause()
 
         # Assert state changed
-        assert app.query_one("#status").renderable == "Submitted"
+        assert app.query_one('#status').renderable == 'Submitted'
 ```
 
 ### Test Keyboard Input
@@ -636,18 +654,18 @@ async def test_keyboard_navigation():
     app = MyApp()
     async with app.run_test() as pilot:
         # Press keys
-        await pilot.press("tab")
+        await pilot.press('tab')
         await pilot.pause()
 
         # Check focus
-        assert app.focused.id == "first-input"
+        assert app.focused.id == 'first-input'
 
         # Type text
-        await pilot.press("h", "e", "l", "l", "o")
+        await pilot.press('h', 'e', 'l', 'l', 'o')
         await pilot.pause()
 
         # Verify input
-        assert app.query_one("#first-input").value == "hello"
+        assert app.query_one('#first-input').value == 'hello'
 ```
 
 ### Test Form Input
@@ -659,16 +677,16 @@ async def test_form_submission():
     app = MyApp()
     async with app.run_test() as pilot:
         # Fill out form
-        app.query_one("#name").value = "Alice"
-        app.query_one("#email").value = "alice@example.com"
+        app.query_one('#name').value = 'Alice'
+        app.query_one('#email').value = 'alice@example.com'
 
         # Submit
-        await pilot.click("#submit")
+        await pilot.click('#submit')
         await pilot.pause()
 
         # Verify
-        assert app.user_data["name"] == "Alice"
-        assert app.user_data["email"] == "alice@example.com"
+        assert app.user_data['name'] == 'Alice'
+        assert app.user_data['email'] == 'alice@example.com'
 ```
 
 ### Test Screen Navigation
@@ -680,19 +698,19 @@ async def test_screen_navigation():
     app = MyApp()
     async with app.run_test() as pilot:
         # Start on main screen
-        assert app.screen.name == "main"
+        assert app.screen.name == 'main'
 
         # Navigate to settings
-        app.push_screen("settings")
+        app.push_screen('settings')
         await pilot.pause()
 
-        assert app.screen.name == "settings"
+        assert app.screen.name == 'settings'
 
         # Go back
         app.pop_screen()
         await pilot.pause()
 
-        assert app.screen.name == "main"
+        assert app.screen.name == 'main'
 ```
 
 ### Test Reactive Updates
@@ -710,7 +728,7 @@ async def test_reactive_update():
         await pilot.pause()
 
         # Check render
-        assert "Count: 5" in str(widget.render())
+        assert 'Count: 5' in str(widget.render())
 ```
 
 ### Test with Custom Size
@@ -723,11 +741,11 @@ async def test_responsive_layout():
 
     # Small screen
     async with app.run_test(size=(40, 20)) as pilot:
-        assert app.query_one("#sidebar").has_class("compact")
+        assert app.query_one('#sidebar').has_class('compact')
 
     # Large screen
     async with app.run_test(size=(120, 40)) as pilot:
-        assert not app.query_one("#sidebar").has_class("compact")
+        assert not app.query_one('#sidebar').has_class('compact')
 ```
 
 ### Test Snapshot (Optional)
@@ -735,13 +753,14 @@ async def test_responsive_layout():
 ```python
 async def test_ui_snapshot(snap_compare):
     """Test visual appearance."""
-    assert await snap_compare("path/to/app.py")
+    assert await snap_compare('path/to/app.py')
+
 
 async def test_ui_after_interaction(snap_compare):
     """Test appearance after interaction."""
     assert await snap_compare(
-        "path/to/app.py",
-        press=["tab", "enter"],
+        'path/to/app.py',
+        press=['tab', 'enter'],
         terminal_size=(100, 30),
     )
 ```
@@ -779,18 +798,19 @@ textual console --port 7777
 ```python
 from textual import log
 
+
 class MyWidget(Widget):
     def on_button_pressed(self) -> None:
         # Log to console
-        log("Button pressed!")
-        log("Current state:", self.state)
+        log('Button pressed!')
+        log('Current state:', self.state)
         log(locals())  # Log all local variables
 
         # Log widget tree
         log(self.tree)
 
         # Log queries
-        log("Buttons:", self.query("Button"))
+        log('Buttons:', self.query('Button'))
 ```
 
 ### Screenshots

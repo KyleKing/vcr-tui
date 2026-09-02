@@ -1,10 +1,10 @@
 __all__ = [
-    "FileListWidget",
-    "FileSelected",
-    "KeySelected",
-    "MetadataBarWidget",
-    "PreviewPanelWidget",
-    "YAMLViewerWidget",
+    'FileListWidget',
+    'FileSelected',
+    'KeySelected',
+    'MetadataBarWidget',
+    'PreviewPanelWidget',
+    'YAMLViewerWidget',
 ]
 
 from vcr_tui.ui.widgets.file_list import FileListWidget, FileSelected

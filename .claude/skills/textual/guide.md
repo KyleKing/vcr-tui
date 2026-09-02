@@ -56,14 +56,15 @@ The foundation class serving as the entry point for all Textual applications.
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Button, Static
 
+
 class MyApp(App):
-    CSS_PATH = "styles.tcss"
-    TITLE = "My Application"
+    CSS_PATH = 'styles.tcss'
+    TITLE = 'My Application'
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static("Welcome to my app!")
-        yield Button("Click me", id="main-button")
+        yield Static('Welcome to my app!')
+        yield Button('Click me', id='main-button')
         yield Footer()
 
     def on_mount(self) -> None:
@@ -73,9 +74,10 @@ class MyApp(App):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events."""
-        self.query_one(Static).update("Button was clicked!")
+        self.query_one(Static).update('Button was clicked!')
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     app = MyApp()
     app.run()  # Returns exit value
 ```
@@ -93,13 +95,13 @@ Containers for widgets that occupy the entire terminal dimensions.
 **Screen Stack Management:**
 ```python
 # Push screen onto stack (becomes active)
-self.push_screen("settings")
+self.push_screen('settings')
 
 # Pop topmost screen (at least one must remain)
 self.pop_screen()
 
 # Replace top screen with new one
-self.switch_screen("help")
+self.switch_screen('help')
 
 # Pop screen and pass data to callback
 self.dismiss(result_data)
@@ -109,21 +111,23 @@ self.dismiss(result_data)
 ```python
 from textual.screen import ModalScreen
 
+
 class ConfirmDialog(ModalScreen[bool]):
     """Type-safe modal that returns a boolean."""
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Static("Are you sure?")
+            yield Static('Are you sure?')
             with Horizontal():
-                yield Button("Yes", id="yes")
-                yield Button("No", id="no")
+                yield Button('Yes', id='yes')
+                yield Button('No', id='no')
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == "yes":
+        if event.button.id == 'yes':
             self.dismiss(True)
         else:
             self.dismiss(False)
+
 
 # Usage in app
 def action_delete(self) -> None:
@@ -142,9 +146,10 @@ Reusable UI components managing rectangular screen regions.
 ```python
 from textual.widget import Widget
 
+
 class Hello(Widget):
     def render(self) -> str:
-        return "Hello, [b]World[/b]!"  # Supports Rich markup
+        return 'Hello, [b]World[/b]!'  # Supports Rich markup
 ```
 
 **The Static Widget:**
@@ -165,14 +170,14 @@ class CustomWidget(Widget):
     can_focus = True  # Make widget focusable
 
     BINDINGS = [
-        ("enter", "select", "Select item"),
-        ("space", "toggle", "Toggle"),
+        ('enter', 'select', 'Select item'),
+        ('space', 'toggle', 'Toggle'),
     ]
 
     def __init__(self) -> None:
         super().__init__()
-        self.border_title = "My Widget"
-        self.tooltip = "This is a helpful tooltip"
+        self.border_title = 'My Widget'
+        self.tooltip = 'This is a helpful tooltip'
 ```
 
 ### CSS Styling System (TCSS)
@@ -277,11 +282,12 @@ Reactive attributes are class-level attributes that automatically trigger UI upd
 from textual.reactive import reactive
 from textual.widget import Widget
 
+
 class Counter(Widget):
     count = reactive(0)  # Reactive attribute
 
     def render(self) -> str:
-        return f"Count: {self.count}"
+        return f'Count: {self.count}'
 
     def on_button_pressed(self) -> None:
         self.count += 1  # Automatically triggers render()
@@ -311,9 +317,9 @@ class Counter(Widget):
     def watch_count(self, old_value: int, new_value: int) -> None:
         """React to changes."""
         if new_value > 10:
-            self.add_class("high")
+            self.add_class('high')
         else:
-            self.remove_class("high")
+            self.remove_class('high')
 ```
 
 **4. Computed Properties:**
@@ -330,16 +336,16 @@ class Calculator(Widget):
 **5. Recompose:**
 ```python
 class ViewSwitcher(Widget):
-    mode = reactive("list", recompose=True)
+    mode = reactive('list', recompose=True)
 
     def compose(self) -> ComposeResult:
-        if self.mode == "list":
+        if self.mode == 'list':
             yield ListView()
         else:
             yield GridView()
 
     def toggle_mode(self) -> None:
-        self.mode = "grid" if self.mode == "list" else "list"
+        self.mode = 'grid' if self.mode == 'list' else 'list'
         # Widget automatically recomposes
 ```
 
@@ -351,14 +357,15 @@ class ParentWidget(Widget):
     def compose(self) -> ComposeResult:
         child = ChildWidget()
         # Bind child's display_value to parent's value
-        child.data_bind(self, display_value="value")
+        child.data_bind(self, display_value='value')
         yield child
+
 
 class ChildWidget(Widget):
     display_value = reactive(0)
 
     def render(self) -> str:
-        return f"Value: {self.display_value}"
+        return f'Value: {self.display_value}'
 ```
 
 ---
@@ -424,12 +431,14 @@ class ParentWidget(Widget):
 
     def on_child_updated(self, message: ChildWidget.Updated) -> None:
         """Handle message from child."""
-        self.log(f"Child updated: {message.new_value}")
+        self.log(f'Child updated: {message.new_value}')
+
 
 # Child widget
 class ChildWidget(Widget):
     class Updated(Message):
         """Posted when child value changes."""
+
         def __init__(self, new_value: int) -> None:
             super().__init__()
             self.new_value = new_value
@@ -475,13 +484,16 @@ Build complex widgets from simpler ones through composition.
 # Simple widgets
 class StatusIcon(Widget):
     def render(self) -> str:
-        return "✓"
+        return '✓'
+
 
 class StatusText(Static):
     pass
 
+
 class StatusButton(Button):
     pass
+
 
 # Compound widget
 class StatusPanel(Widget):
@@ -490,8 +502,8 @@ class StatusPanel(Widget):
     def compose(self) -> ComposeResult:
         with Horizontal():
             yield StatusIcon()
-            yield StatusText("Ready")
-            yield StatusButton("Refresh")
+            yield StatusText('Ready')
+            yield StatusButton('Refresh')
 ```
 
 ---
@@ -528,19 +540,20 @@ asyncio_mode = auto
 import pytest
 from my_app import MyApp
 
+
 @pytest.mark.asyncio
 async def test_button_click():
     app = MyApp()
     async with app.run_test() as pilot:
         # Simulate user pressing button
-        await pilot.click("#submit-button")
+        await pilot.click('#submit-button')
 
         # Wait for async processing
         await pilot.pause()
 
         # Assertions
-        result = app.query_one("#result", Static)
-        assert result.renderable == "Success"
+        result = app.query_one('#result', Static)
+        assert result.renderable == 'Success'
 ```
 
 ### Pilot Methods for Simulation
@@ -548,23 +561,23 @@ async def test_button_click():
 **Keyboard Input:**
 ```python
 # Single key press
-await pilot.press("enter")
+await pilot.press('enter')
 
 # Multiple keys
-await pilot.press("h", "e", "l", "l", "o")
+await pilot.press('h', 'e', 'l', 'l', 'o')
 
 # Modifiers
-await pilot.press("ctrl+c")
-await pilot.press("shift+tab")
+await pilot.press('ctrl+c')
+await pilot.press('shift+tab')
 
 # Named keys
-await pilot.press("tab", "down", "up", "escape", "pagedown")
+await pilot.press('tab', 'down', 'up', 'escape', 'pagedown')
 ```
 
 **Mouse Interaction:**
 ```python
 # Click by selector
-await pilot.click("#my-button")
+await pilot.click('#my-button')
 
 # Click by widget type
 await pilot.click(Button)
@@ -573,11 +586,11 @@ await pilot.click(Button)
 await pilot.click(offset=(10, 5))
 
 # Double/triple click
-await pilot.click("#item", times=2)
+await pilot.click('#item', times=2)
 
 # Click with modifiers
-await pilot.click("#file", shift=True)
-await pilot.click("#item", ctrl=True)
+await pilot.click('#file', shift=True)
+await pilot.click('#item', ctrl=True)
 ```
 
 **Async Handling:**
@@ -594,31 +607,31 @@ await pilot.pause()
 **1. Always Use `await pilot.pause()`:**
 ```python
 # WRONG - race condition
-await pilot.click("#button")
-assert app.query_one("#status").text == "Done"  # May fail!
+await pilot.click('#button')
+assert app.query_one('#status').text == 'Done'  # May fail!
 
 # RIGHT
-await pilot.click("#button")
+await pilot.click('#button')
 await pilot.pause()  # Wait for message processing
-assert app.query_one("#status").text == "Done"
+assert app.query_one('#status').text == 'Done'
 ```
 
 **2. Query Widgets for Assertions:**
 ```python
 # Get specific widget by ID
-result = app.query_one("#result", Static)
-assert result.renderable == "Expected text"
+result = app.query_one('#result', Static)
+assert result.renderable == 'Expected text'
 
 # Get by type
 button = app.query_one(Button)
-assert button.label == "Click me"
+assert button.label == 'Click me'
 
 # Check multiple widgets
-buttons = app.query("Button.enabled")
+buttons = app.query('Button.enabled')
 assert len(buttons) == 3
 
 # Check widget state
-assert widget.has_class("active")
+assert widget.has_class('active')
 assert widget.disabled is False
 ```
 
@@ -760,12 +773,14 @@ Modern terminals support hardware acceleration - smooth performance is achievabl
 ```python
 from dataclasses import dataclass
 
+
 # Immutable data structures
 @dataclass(frozen=True)
 class UserData:
     id: int
     name: str
     email: str
+
 
 # Easier to reason about, cache, and test
 # Reduces side-effects in layout calculations
@@ -775,6 +790,7 @@ class UserData:
 
 ```python
 from textual.widgets import Static
+
 
 # Static caches render results automatically
 class StatusDisplay(Static):
@@ -796,6 +812,7 @@ class StatusDisplay(Static):
 def on_button_pressed(self):
     self.mount(Widget())  # Missing await
 
+
 # RIGHT
 async def on_button_pressed(self):
     await self.mount(Widget())
@@ -811,14 +828,15 @@ Many Textual methods are async and must be awaited:
 ```python
 # WRONG - assertion may run before UI updates
 async def test_feature():
-    await pilot.click("#button")
-    assert app.query_one("#status").text == "Done"  # Race condition!
+    await pilot.click('#button')
+    assert app.query_one('#status').text == 'Done'  # Race condition!
+
 
 # RIGHT
 async def test_feature():
-    await pilot.click("#button")
+    await pilot.click('#button')
     await pilot.pause()  # Wait for messages to process
-    assert app.query_one("#status").text == "Done"
+    assert app.query_one('#status').text == 'Done'
 ```
 
 #### 3. Modifying Reactive Attributes in `__init__`
@@ -829,14 +847,17 @@ def __init__(self):
     super().__init__()
     self.count = 10  # Triggers watch_count before ready!
 
+
 # RIGHT - Option 1: use set_reactive
 def __init__(self):
     super().__init__()
     self.set_reactive(MyWidget.count, 10)  # No watcher invocation
 
+
 # RIGHT - Option 2: set in on_mount
 def __init__(self):
     super().__init__()
+
 
 def on_mount(self):
     self.count = 10  # Safe to trigger watchers now
@@ -847,16 +868,18 @@ def on_mount(self):
 ```python
 # WRONG - blocks UI
 def on_button_pressed(self):
-    response = requests.get("https://api.example.com")  # Blocking!
+    response = requests.get('https://api.example.com')  # Blocking!
     self.display_result(response.json())
+
 
 # RIGHT - use workers
 from textual.worker import work
 
+
 @work(exclusive=True)
 async def on_button_pressed(self):
     # Use async HTTP library
-    response = await httpx.get("https://api.example.com")
+    response = await httpx.get('https://api.example.com')
     self.display_result(response.json())
 ```
 
@@ -878,9 +901,10 @@ textual run --dev my_app.py
 ```python
 from textual import log
 
+
 def on_button_pressed(self):
-    log("Button pressed!")
-    log("Current state:", self.state)
+    log('Button pressed!')
+    log('Current state:', self.state)
     log(locals())  # Log all local variables
 ```
 
@@ -922,15 +946,17 @@ class UserCard(Widget):
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            yield Avatar()           # Simple widget
-            yield UserName()         # Simple widget
-            yield UserEmail()        # Simple widget
-            yield ActionButtons()    # Simple widget
+            yield Avatar()  # Simple widget
+            yield UserName()  # Simple widget
+            yield UserEmail()  # Simple widget
+            yield ActionButtons()  # Simple widget
+
 
 class Avatar(Static):
     """Single-purpose: display avatar."""
+
     def render(self) -> str:
-        return "👤"
+        return '👤'
 ```
 
 ### State Management Approaches
@@ -947,7 +973,7 @@ class Counter(Widget):
         self.count += 1
 
     def render(self) -> str:
-        return f"Count: {self.count}"
+        return f'Count: {self.count}'
 ```
 
 #### 2. App-Level State (Medium)
@@ -957,19 +983,20 @@ Best for: Global application state accessible from any widget.
 ```python
 class MyApp(App):
     # App-level reactive state
-    user_name = reactive("")
+    user_name = reactive('')
     is_authenticated = reactive(False)
 
     def login(self, username: str) -> None:
         self.user_name = username
         self.is_authenticated = True
 
+
 # Any widget can access via self.app
 class UserWidget(Widget):
     def render(self) -> str:
         if self.app.is_authenticated:
-            return f"Welcome, {self.app.user_name}!"
-        return "Please log in"
+            return f'Welcome, {self.app.user_name}!'
+        return 'Please log in'
 ```
 
 #### 3. Message-Based State (Complex)
@@ -979,15 +1006,18 @@ Best for: Decoupled communication between widgets, event-driven updates.
 ```python
 class DataUpdated(Message):
     """Posted when data changes."""
+
     def __init__(self, data: dict) -> None:
         super().__init__()
         self.data = data
+
 
 class DataWidget(Widget):
     def update_data(self, data: dict) -> None:
         """Update data and notify listeners."""
         self.data = data
         self.post_message(DataUpdated(data))
+
 
 class ListenerWidget(Widget):
     def on_data_updated(self, message: DataUpdated) -> None:
@@ -1016,11 +1046,13 @@ class UserPanel(Widget):
         yield UserForm()
         yield UserActions()
 
+
 # business_logic/services.py
 class UserService:
     async def fetch_user(self, user_id: int) -> User:
         # API calls
         pass
+
 
 # business_logic/validators.py
 class UserValidator:
@@ -1035,17 +1067,18 @@ class UserValidator:
 from textual.app import App, ComposeResult
 from textual.widgets import Button, Static
 
+
 class MyApp(App):
     def compose(self) -> ComposeResult:
-        yield Button("Click", id="main-button")
-        yield Static("Status", id="status")
+        yield Button('Click', id='main-button')
+        yield Static('Status', id='status')
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button: Button = event.button
-        button.label = "Clicked"
+        button.label = 'Clicked'
 
-        status: Static = self.query_one("#status", Static)
-        status.update("Button was clicked")
+        status: Static = self.query_one('#status', Static)
+        status.update('Button was clicked')
 ```
 
 ---

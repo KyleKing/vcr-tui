@@ -68,11 +68,12 @@ Textual's reactive system automatically updates the UI when data changes:
 ```python
 from textual.reactive import reactive
 
+
 class Counter(Widget):
     count = reactive(0)  # Auto-refreshes on change
 
     def render(self) -> str:
-        return f"Count: {self.count}"
+        return f'Count: {self.count}'
 ```
 
 Features:
@@ -114,19 +115,21 @@ Benefits:
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static
 
+
 class MyApp(App):
-    CSS_PATH = "app.tcss"
+    CSS_PATH = 'app.tcss'
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Static("Hello, Textual!")
+        yield Static('Hello, Textual!')
         yield Footer()
 
     def on_mount(self) -> None:
         """Called after app starts."""
         pass
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     MyApp().run()
 ```
 
@@ -138,6 +141,7 @@ Follow **"Attributes down, messages up"**:
 # Parent sets child attributes (down)
 child.value = 10
 
+
 # Child posts messages to parent (up)
 class ChildWidget(Widget):
     class Updated(Message):
@@ -148,10 +152,11 @@ class ChildWidget(Widget):
     def update_value(self) -> None:
         self.post_message(self.Updated(self.value))
 
+
 # Parent handles child messages
 class ParentWidget(Widget):
     def on_child_widget_updated(self, message: ChildWidget.Updated) -> None:
-        self.log(f"Child updated: {message.value}")
+        self.log(f'Child updated: {message.value}')
 ```
 
 ### Testing Pattern
@@ -160,19 +165,20 @@ class ParentWidget(Widget):
 import pytest
 from my_app import MyApp
 
+
 @pytest.mark.asyncio
 async def test_button_click():
     app = MyApp()
     async with app.run_test() as pilot:
         # Simulate user interaction
-        await pilot.click("#submit-button")
+        await pilot.click('#submit-button')
 
         # CRITICAL: Wait for message processing
         await pilot.pause()
 
         # Assert state changed
-        result = app.query_one("#status")
-        assert "Success" in str(result.renderable)
+        result = app.query_one('#status')
+        assert 'Success' in str(result.renderable)
 ```
 
 ## Best Practices
@@ -208,6 +214,7 @@ class UserPanel(Widget):
         super().__init__()
         self.service = UserService()  # Business logic
 
+
 # Business logic in business_logic/
 class UserService:
     async def fetch_user(self, user_id: int) -> User:
@@ -219,7 +226,7 @@ class UserService:
 
 ```python
 class MyApp(App):
-    CSS_PATH = "app.tcss"  # Enables live reload
+    CSS_PATH = 'app.tcss'  # Enables live reload
 ```
 
 ### Performance
@@ -247,6 +254,7 @@ class MyApp(App):
 def on_button_pressed(self):
     self.mount(Widget())
 
+
 # RIGHT
 async def on_button_pressed(self):
     await self.mount(Widget())
@@ -257,14 +265,15 @@ async def on_button_pressed(self):
 ```python
 # WRONG - race condition
 async def test_feature():
-    await pilot.click("#button")
-    assert app.query_one("#status").text == "Done"
+    await pilot.click('#button')
+    assert app.query_one('#status').text == 'Done'
+
 
 # RIGHT
 async def test_feature():
-    await pilot.click("#button")
+    await pilot.click('#button')
     await pilot.pause()  # Wait for processing
-    assert app.query_one("#status").text == "Done"
+    assert app.query_one('#status').text == 'Done'
 ```
 
 ### 3. Modifying reactives in __init__
@@ -274,6 +283,7 @@ async def test_feature():
 def __init__(self):
     super().__init__()
     self.count = 10
+
 
 # RIGHT - use set_reactive or on_mount
 def __init__(self):
@@ -286,14 +296,16 @@ def __init__(self):
 ```python
 # WRONG
 def on_button_pressed(self):
-    response = requests.get("https://api.example.com")  # Blocks UI!
+    response = requests.get('https://api.example.com')  # Blocks UI!
+
 
 # RIGHT - use workers
 from textual.worker import work
 
+
 @work(exclusive=True)
 async def on_button_pressed(self):
-    response = await httpx.get("https://api.example.com")
+    response = await httpx.get('https://api.example.com')
 ```
 
 ## Development Tools
@@ -313,7 +325,8 @@ textual run --dev my_app.py
 In code:
 ```python
 from textual import log
-log("Debug message", locals())
+
+log('Debug message', locals())
 ```
 
 ### Screenshots & Live Editing
@@ -401,13 +414,16 @@ def __init__(self) -> None:
     """Widget created - don't modify reactives here."""
     super().__init__()
 
+
 def compose(self) -> ComposeResult:
     """Build child widgets."""
     yield ChildWidget()
 
+
 def on_mount(self) -> None:
     """After mounted - safe to modify reactives."""
     self.set_interval(1, self.update)
+
 
 def on_unmount(self) -> None:
     """Before removal - cleanup resources."""

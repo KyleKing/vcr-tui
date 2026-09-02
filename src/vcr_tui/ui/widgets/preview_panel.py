@@ -6,11 +6,11 @@ from textual.widgets import Static
 from vcr_tui.preview.types import PreviewResult
 
 LEXER_MAP = {
-    "json": "json",
-    "yaml": "yaml",
-    "html": "html",
-    "text": "text",
-    "toml": "toml",
+    'json': 'json',
+    'yaml': 'yaml',
+    'html': 'html',
+    'text': 'text',
+    'toml': 'toml',
 }
 
 
@@ -21,12 +21,12 @@ class PreviewPanelWidget(Static):
 
     def set_preview(self, result: PreviewResult) -> None:
         self._result = result
-        lexer = LEXER_MAP.get(result.formatter, "text")
+        lexer = LEXER_MAP.get(result.formatter, 'text')
 
         syntax = Syntax(
             result.content,
             lexer,
-            theme="monokai",
+            theme='monokai',
             line_numbers=True,
             word_wrap=True,
         )
@@ -34,4 +34,4 @@ class PreviewPanelWidget(Static):
 
     def clear_preview(self) -> None:
         self._result = None
-        self.update("")
+        self.update('')

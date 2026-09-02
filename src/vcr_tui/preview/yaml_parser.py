@@ -14,13 +14,13 @@ def load_yaml(file_path: Path) -> Any:
         return _yaml.load(f)
 
 
-def _extract_keys(data: Any, prefix: str = "", depth: int = 0) -> list[YAMLKey]:
+def _extract_keys(data: Any, prefix: str = '', depth: int = 0) -> list[YAMLKey]:
     keys: list[YAMLKey] = []
 
     match data:
         case dict():
             for key, value in data.items():
-                current_path = f"{prefix}.{key}" if prefix else key
+                current_path = f'{prefix}.{key}' if prefix else key
                 is_leaf = not isinstance(value, (dict, list))
                 keys.append(
                     YAMLKey(
@@ -35,12 +35,12 @@ def _extract_keys(data: Any, prefix: str = "", depth: int = 0) -> list[YAMLKey]:
 
         case list():
             for i, item in enumerate(data):
-                current_path = f"{prefix}[{i}]"
+                current_path = f'{prefix}[{i}]'
                 is_leaf = not isinstance(item, (dict, list))
                 keys.append(
                     YAMLKey(
                         path=current_path,
-                        display=f"[{i}]",
+                        display=f'[{i}]',
                         depth=depth,
                         is_leaf=is_leaf,
                     )
@@ -57,7 +57,7 @@ def get_yaml_keys(file_path: Path) -> list[YAMLKey]:
 
 
 def get_value_at_path(data: Any, path: str) -> Any:
-    if not path or path == ".":
+    if not path or path == '.':
         return data
 
     parts = _parse_path(path)
@@ -81,21 +81,21 @@ def get_value_at_path(data: Any, path: str) -> Any:
 
 def _parse_path(path: str) -> list[str | int]:
     parts: list[str | int] = []
-    current = ""
+    current = ''
     i = 0
 
     while i < len(path):
         char = path[i]
         match char:
-            case ".":
+            case '.':
                 if current:
                     parts.append(current)
-                    current = ""
-            case "[":
+                    current = ''
+            case '[':
                 if current:
                     parts.append(current)
-                    current = ""
-                end = path.index("]", i)
+                    current = ''
+                end = path.index(']', i)
                 index_str = path[i + 1 : end]
                 parts.append(int(index_str))
                 i = end

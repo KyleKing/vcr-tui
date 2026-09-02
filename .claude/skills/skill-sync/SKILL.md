@@ -231,7 +231,7 @@ For comprehensive guidance on:
 2. **Testing Pattern**
    ```python
    async with app.run_test() as pilot:
-       await pilot.click("#button")
+       await pilot.click('#button')
        await pilot.pause()  # Critical!
    ```
 
@@ -481,31 +481,34 @@ Create scripts to generate tool configs from skills:
 import re
 from pathlib import Path
 
+
 def extract_key_concepts(skill_md: str) -> str:
     """Extract core concepts from SKILL.md."""
     # Parse markdown, extract key sections
     # Create condensed summary
     pass
 
+
 def generate_cursorrules():
     """Generate .cursorrules from all skills."""
-    skills_dir = Path(".claude/skills")
+    skills_dir = Path('.claude/skills')
 
-    output = ["# Project AI Context\n"]
-    output.append("Generated from Claude Skills\n\n")
+    output = ['# Project AI Context\n']
+    output.append('Generated from Claude Skills\n\n')
 
     for skill_dir in skills_dir.iterdir():
         if skill_dir.is_dir():
-            skill_md = skill_dir / "SKILL.md"
+            skill_md = skill_dir / 'SKILL.md'
             if skill_md.exists():
                 concepts = extract_key_concepts(skill_md.read_text())
-                output.append(f"## {skill_dir.name}\n")
+                output.append(f'## {skill_dir.name}\n')
                 output.append(concepts)
-                output.append(f"\nDetails: `.claude/skills/{skill_dir.name}/`\n\n")
+                output.append(f'\nDetails: `.claude/skills/{skill_dir.name}/`\n\n')
 
-    Path(".cursorrules").write_text("".join(output))
+    Path('.cursorrules').write_text(''.join(output))
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     generate_cursorrules()
 ```
 
@@ -670,7 +673,7 @@ class Counter(Widget):
 ### Testing Pattern
 ```python
 async with app.run_test() as pilot:
-    await pilot.click("#button")
+    await pilot.click('#button')
     await pilot.pause()  # Essential!
 ```
 

@@ -1,48 +1,180 @@
-[project]
-name = "vcr-tui"
-version = "0.1.0"
-description = "TUI for previewing VCR cassettes and machine-generated files"
-readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
-    "click>=8.3.3",
-    "platformdirs>=3.0.0",
-    "rich>=13.0.0",
-    "ruamel.yaml>=0.18.0",
-    "textual>=0.50.0",
-    "tomli-w>=1.2.0",
+[build-system]
+build-backend = "uv_build"
+requires = ["uv_build>=0.9.26,<2.0"]
+
+[dependency-groups]
+dev = [
+  "calcipy[recommended]>=6.0.1",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.26.0",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "mypy>=1.0.0",
-    "pytest>=9.0.3",
-    "pytest-asyncio>=0.21.0",
-    "pytest-textual-snapshot>=0.1.0",
-    "ruff>=0.1.0",
+[project]
+authors = [
+  {email = "dev.act.kyle@gmail.com", name = "Kyle King"},
 ]
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+] # https://pypi.org/classifiers/
+dependencies = [
+  "click>=8.3.3",
+  "platformdirs>=3.0.0",
+  "rich>=13.0.0",
+  "ruamel.yaml>=0.18.0",
+  "textual>=0.50.0",
+  "tomli-w>=1.2.0",
+]
+description = "TUI for previewing VCR cassettes and machine-generated files"
+keywords = ["calcipy_template", "tui", "vcr", "textual"]
+license = "MIT"
+maintainers = []
+name = "vcr-tui"
+readme = "README.md"
+requires-python = ">=3.11.0"
+version = "0.1.0"
 
 [project.scripts]
 vcr-tui = "vcr_tui.cli:main"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[project.urls]
+"Bug Tracker" = "https://github.com/kyleking/vcr-tui/issues"
+"Changelog" = "https://github.com/kyleking/vcr-tui/blob/main/docs/docs/CHANGELOG.md"
+"Documentation" = "https://vcr-tui.kyleking.me"
+"Repository" = "https://github.com/kyleking/vcr-tui"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/vcr_tui"]
+[tool.commitizen]
+pre_bump_hooks = ["uv lock"]
+version = "0.0.1"
+version_files = ["pyproject.toml:^version", "src/vcr_tui/__init__.py:^__version"]
 
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+[tool.mypy]
+check_untyped_defs = true
+disallow_any_generics = true
+enable_error_code = ["ignore-without-code", "possibly-undefined", "redundant-expr", "truthy-bool"]
+extra_checks = true
+files = ["src/vcr_tui", "tests"]
+no_implicit_reexport = true
+plugins = [
+]
+python_version = "3.11"
+show_column_numbers = true
+show_error_codes = true
+strict_equality = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
-[tool.mypy]
-python_version = "3.11"
-strict = true
+[tool.pyright]
+include = ["vcr_tui", "tests"]
+pythonVersion = "3.11"
+
+[tool.ruff]
+# Docs: https://github.com/charliermarsh/ruff
+# Tip: uv run ruff rule unused-noqa
+line-length = 100
+target-version = 'py311'
+
+[tool.ruff.format]
+quote-style = 'single'
+
+[tool.ruff.lint]
+ignore = [
+  'any-type', # Dynamically typed expressions (typing.Any) are disallowed in `pop_key`
+  'blind-except', # Do not catch blind exception: `Exception`
+  'docstring-missing-exception', # Raised exception `RuntimeError` missing from docstring
+  'docstring-missing-returns', # Missing "Returns" in docstring; prefer minimal docstrings
+  'incorrect-blank-line-before-class', # "1 blank line required before class docstring" (Conflicts with blank-line-before-class)
+  'invalid-todo-tag', # Invalid TODO tag: `FIXME`
+  'line-contains-fixme', # Line contains FIXME
+  'line-contains-hack', # Line contains HACK
+  'line-contains-todo', # Line contains TODO
+  'missing-copyright-notice', # Missing copyright notice at top of file
+  'missing-todo-author', # Missing author in TODO; try: `# TODO(<author_name>): ...`
+  'missing-todo-link', # Missing issue link on the line following this TODO
+  'missing-trailing-comma', # Conflicts with formatter
+  'missing-type-args', # Missing type annotation for `*args`
+  'missing-type-kwargs', # Missing type annotation for `**kwargs`
+  'multi-line-summary-second-line', # "Multi-line docstring summary should start at the second line" (Conflicts with multi-line-summary-first-line)
+  'non-empty-init-module', # `__init__` module should only contain docstrings and re-exports
+  'noqa-comments', # Prefer `ruff: ignore` over `noqa`; `noqa` stays for cross-tool compatibility
+  'raise-vanilla-args', # Avoid specifying long messages outside the exception class
+  'raw-string-in-exception', # Exception must not use a string literal, assign to variable first
+  'too-many-arguments', # Too many arguments in function definition (6 > 5)
+  'typing-only-first-party-import', # Move application import `tail_jsonl.config.Config` into a type-checking block (Conflicts with Beartype)
+  'typing-only-standard-library-import', # Move standard library import `argparse` into a type-checking block (Conflicts with Beartype)
+  'typing-only-third-party-import', # Move third-party import `rich.console.Console` into a type-checking block (Conflicts with Beartype)
+]
+preview = true
+select = ['E', 'F', 'I', 'UP', 'B', 'SIM']
+unfixable = [
+  'commented-out-code', # Commented out code
+]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = 'single'
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+'invoke.collection.Collection'.msg = 'Use calcipy.collection.Collection instead.'
+'invoke.tasks.task'.msg = 'Use calcipy.cli.task instead.'
+'typing.Callable'.msg = 'Use "from collections.abc" instead.'
+'typing.Dict'.msg = 'Use "from __future__ import annotations"'
+'typing.List'.msg = 'Use "from __future__ import annotations"'
+'typing.Optional'.msg = 'Use "from __future__ import annotations"'
+'typing.Protocol'.msg = 'Use "from beartype.typing" instead.'
+
+[tool.ruff.lint.isort]
+known-first-party = ['vcr_tui']
+
+[tool.ruff.lint.per-file-ignores]
+'./vcr_tui/../*.py' = [
+  'implicit-namespace-package', # File `/<>.py` is part of an implicit namespace package. Add an `__init__.py`.
+]
+'__init__.py' = [
+  'undocumented-public-package', # Missing docstring in public package
+]
+'scripts/*.py' = [
+  'implicit-namespace-package', # File `scripts/*.py` is part of an implicit namespace package. Add an `__init__.py`.
+]
+'scripts/check_imports.py' = [
+  'unused-import', # imported but unused; consider adding to __all__ or using a redundant alias
+]
+'tests/*.py' = [
+  'assert', # Use of `assert` detected
+  'import-private-name', # Private name import `_<>` from external module
+  'missing-return-type-private-function', # Missing return type annotation for private function `test_make_diffable`
+  'missing-return-type-undocumented-public-function', # Missing return type annotation for public function
+  'missing-type-function-argument', # Missing type annotation for function argument
+  'pytest-missing-fixture-name-underscore', # flake8-pytest-style: fixture does not return
+  'too-many-positional-arguments', # Too many positional arguments (6/5)
+  'undocumented-public-function', # Missing docstring in public function
+  'undocumented-public-module', # Missing docstring in public module
+  'unused-function-argument', # Unused function argument: `line`
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.tomlsort]
+all = true
+in_place = true
+trailing_comma_inline_array = true
+
+[tool.uv]
+default-groups = ["dev"]
+required-version = ">=0.9.0"
+
+[tool.uv.build-backend]
+module-name = "vcr_tui"
+module-root = "src"

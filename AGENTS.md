@@ -1,48 +1,25 @@
-# AGENTS.md
+# Agent guidelines
 
-## What this is
+## Commands
 
-`vcr-tui` — a Textual TUI plus a Click CLI for previewing VCR cassettes
-(YAML) and other machine-generated files. Python 3.11+, packaged with hatchling.
+- `./run main` runs the default gates: lint, auto-format, and test coverage
+- `./run lint.fix test` fixes lint findings and runs the tests
+- `./run --help` lists every available calcipy task
+- `uv run pytest tests -k <pattern>` runs a subset directly when that is faster
+
+Run `./run main` before reporting work as done.
 
 ## Layout
 
-- `src/vcr_tui/cli.py` — Click CLI (`vcr-tui [dir]`, subcommands `files`,
-  `keys`, `preview`, `channels`); `app.py` — the Textual `App`.
-- `src/vcr_tui/config/` — TOML config: defaults, dataclass models,
-  layered loader (defaults → global in platformdirs config dir → `vcr-tui.toml`
-  found walking up from the start directory, `root = true` stops the walk).
-- `src/vcr_tui/preview/` — the core, UI-free logic: YAML parsing/key
-  extraction (`yaml_parser.py`), formatters (`json`/`yaml`/`text`/`html`/`toml`),
-  and `PreviewEngine` (file discovery + extraction rules per "channel").
-- `src/vcr_tui/ui/` — Textual screen and widgets; styles in
-  `ui/styles/app.tcss`.
-- `tests/` — mirrors the package layout; `fixtures/cassettes/` holds a sample
-  cassette.
-- `NEXT_STEPS.md` — current roadmap.
+- Source lives in `vcr_tui/` and tests under `tests/`
+- Docs live in `docs/docs/` and build with mkdocs
 
-## Working here
+## Conventions
 
-Use [uv](https://docs.astral.sh/uv/):
+- Python runs through uv (`uv run <tool>`). Never install tools globally for this project
+- ruff formats and lints, and mypy and pyright must both pass
+- Commit messages follow Conventional Commits and commitizen bumps versions from them
 
-```bash
-uv sync --extra dev   # set up env with dev deps
-uv run vcr-tui        # run the app
-uv run vcr-tui files  # CLI subcommands
-```
+This file is template-owned and `copier update` keeps it current. Put project-specific guidance in `AGENTS.local.md` (loaded below when present) or in a nested `AGENTS.md` scoped to its directory.
 
-Always reach a tool through `uv run`, never through `.venv/bin/…`: the harness
-allows `uv` and stops to ask about a binary inside the project it cannot read.
-
-Checks (run via `uv run`):
-
-- **ruff** — lint, line length 100, py311 target:
-  `uv run ruff check .`
-- **ty** — type checking: `uv run ty check src`
-- **pytest** — tests, asyncio auto mode: `uv run pytest`
-
-Note `pyproject.toml` currently configures mypy rather than ty; keep the
-tooling consistent when touching it.
-
-Keep `preview/` free of UI imports — it is the testable core. The TUI
-(`ui/`) should only consume it.
+@AGENTS.local.md

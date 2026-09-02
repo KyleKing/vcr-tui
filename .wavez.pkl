@@ -26,9 +26,16 @@ checks {
   }
 }
 
+// The template this project is generated from. copier reads it from here
+// rather than over the network, so the run needs it readable.
+extraDirs = new Listing {
+  "../calcipy_template"
+}
+
 // The toolchain a uv project runs, which the built-in list (a Go toolchain and
 // the read-only commands around it) does not name.
 shellAllow = new Listing {
+  "copier"
   "pytest"
   "python"
   "python3"

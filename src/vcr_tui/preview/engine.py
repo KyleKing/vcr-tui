@@ -6,7 +6,7 @@ from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.types import PreviewResult, YAMLKey
 from vcr_tui.preview.yaml_parser import get_value_at_path, get_yaml_keys, load_yaml
 
-EXCLUDED_DIRS = frozenset({".git", ".venv", "venv", "node_modules", "__pycache__", ".tox"})
+EXCLUDED_DIRS = frozenset({'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.tox'})
 
 
 class PreviewEngine:
@@ -20,7 +20,7 @@ class PreviewEngine:
 
         files: list[Path] = []
         for pattern in channel.glob_patterns:
-            for path in directory.rglob("*"):
+            for path in directory.rglob('*'):
                 if path.is_file() and self._should_include(path, directory, pattern):
                     files.append(path)
 
@@ -47,7 +47,7 @@ class PreviewEngine:
         channel = self.config.get_channel(channel_name)
         rule = self._find_matching_rule(key_path, channel)
 
-        formatter: FormatterType = rule.formatter if rule else "yaml"
+        formatter: FormatterType = rule.formatter if rule else 'yaml'
         label = rule.label if rule else None
 
         formatted = format_content(value, formatter)
@@ -69,7 +69,7 @@ class PreviewEngine:
         data = load_yaml(file_path)
         channel = self.config.get_channel(channel_name)
 
-        formatter: FormatterType = "yaml"
+        formatter: FormatterType = 'yaml'
         label: str | None = None
         if channel and channel.extraction_rules:
             rule = channel.extraction_rules[0]
@@ -82,7 +82,7 @@ class PreviewEngine:
             content=formatted,
             formatter=formatter,
             metadata={},
-            source_path=".",
+            source_path='.',
             label=label,
         )
 
@@ -100,18 +100,18 @@ class PreviewEngine:
         return None
 
     def _path_matches_rule(self, key_path: str, rule_path: str) -> bool:
-        if rule_path == ".":
+        if rule_path == '.':
             return True
 
-        rule_parts = rule_path.lstrip(".").split(".")
-        key_parts = self._normalize_path(key_path).split(".")
+        rule_parts = rule_path.lstrip('.').split('.')
+        key_parts = self._normalize_path(key_path).split('.')
 
         if len(key_parts) < len(rule_parts):
             return False
 
         for rule_part, key_part in zip(rule_parts, key_parts, strict=False):
-            if "[]" in rule_part:
-                base = rule_part.replace("[]", "")
+            if '[]' in rule_part:
+                base = rule_part.replace('[]', '')
                 if not key_part.startswith(base):
                     return False
             elif rule_part != key_part:
@@ -122,7 +122,7 @@ class PreviewEngine:
     def _normalize_path(self, path: str) -> str:
         import re
 
-        return re.sub(r"\[(\d+)\]", r"[\1]", path)
+        return re.sub(r'\[(\d+)\]', r'[\1]', path)
 
     def _extract_metadata(
         self,
@@ -137,7 +137,7 @@ class PreviewEngine:
         base_path = self._get_base_path(key_path)
 
         for meta_key in rule.metadata_keys:
-            full_path = f"{base_path}.{meta_key}" if base_path else meta_key
+            full_path = f'{base_path}.{meta_key}' if base_path else meta_key
             value = get_value_at_path(data, full_path)
             if value is not None:
                 metadata[meta_key] = value
@@ -145,5 +145,5 @@ class PreviewEngine:
         return metadata
 
     def _get_base_path(self, key_path: str) -> str:
-        parts = key_path.rsplit(".", 1)
-        return parts[0] if len(parts) > 1 else ""
+        parts = key_path.rsplit('.', 1)
+        return parts[0] if len(parts) > 1 else ''

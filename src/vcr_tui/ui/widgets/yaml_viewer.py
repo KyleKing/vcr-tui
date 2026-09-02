@@ -16,8 +16,8 @@ class KeySelected(Message):
 
 class YAMLViewerWidget(OptionList):
     BINDINGS = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
+        Binding('j', 'cursor_down', 'Down', show=False),
+        Binding('k', 'cursor_up', 'Up', show=False),
     ]
 
     def __init__(self, **kwargs: Any) -> None:
@@ -28,8 +28,8 @@ class YAMLViewerWidget(OptionList):
         self._keys = keys
         self.clear_options()
         for key in keys:
-            indent = "  " * key.depth
-            display = f"{indent}{key.display}"
+            indent = '  ' * key.depth
+            display = f'{indent}{key.display}'
             self.add_option(Option(display, id=key.path))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:

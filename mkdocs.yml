@@ -1,0 +1,72 @@
+---
+site_name: vcr_tui
+site_author: Kyle King
+site_description: vcr_tui project documentation
+site_url: https://vcr-tui.kyleking.me
+repo_name: kyleking/vcr-tui
+repo_url: https://github.com/kyleking/vcr-tui
+edit_uri: edit/main/docs
+docs_dir: docs
+site_dir: releases/site
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      accent: green
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - toc.autohide
+
+watch:
+  - src/vcr_tui
+
+plugins:
+  - gen-files:
+      scripts:
+        - docs/gen_ref_nav.py
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_section_style: spacy
+            line_length: 120
+            separate_signature: true
+            show_category_heading: true
+  - search
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - codehilite:
+      linenums: true
+  - def_list
+  - extra
+  - fenced_code
+  - footnotes
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.details
+  - pymdownx.highlight:
+      linenums: true
+      linenums_style: pymdownx-inline
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      clickable_checkbox: true
+  - smarty
+  - tables
+  - toc:
+      permalink: ⚓︎
+      toc_depth: 5
+
+extra_css:
+  - _styles/mkdocstrings.css
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.6.0/tablesort.min.js
+  - _javascript/tables.js

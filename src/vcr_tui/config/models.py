@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from itertools import starmap
 from typing import Any, Literal
 
-FormatterType = Literal["html", "json", "text", "toml", "yaml"]
+FormatterType = Literal['html', 'json', 'text', 'toml', 'yaml']
 
 
 @dataclass(frozen=True)
@@ -12,12 +13,12 @@ class ExtractionRule:
     metadata_keys: tuple[str, ...] = ()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ExtractionRule":
+    def from_dict(cls, data: dict[str, Any]) -> 'ExtractionRule':
         return cls(
-            path=data["path"],
-            formatter=data["formatter"],
-            label=data.get("label"),
-            metadata_keys=tuple(data.get("metadata_keys", [])),
+            path=data['path'],
+            formatter=data['formatter'],
+            label=data.get('label'),
+            metadata_keys=tuple(data.get('metadata_keys', [])),
         )
 
 
@@ -29,13 +30,13 @@ class Channel:
     enabled: bool = True
 
     @classmethod
-    def from_dict(cls, name: str, data: dict[str, Any]) -> "Channel":
-        rules = tuple(ExtractionRule.from_dict(r) for r in data.get("extraction_rules", []))
+    def from_dict(cls, name: str, data: dict[str, Any]) -> 'Channel':
+        rules = tuple(ExtractionRule.from_dict(r) for r in data.get('extraction_rules', []))
         return cls(
             name=name,
-            glob_patterns=tuple(data.get("glob_patterns", [])),
+            glob_patterns=tuple(data.get('glob_patterns', [])),
             extraction_rules=rules,
-            enabled=data.get("enabled", True),
+            enabled=data.get('enabled', True),
         )
 
 
@@ -46,15 +47,13 @@ class Config:
     default_channel: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Config":
-        channels_data = data.get("channels", {})
-        channels = tuple(
-            Channel.from_dict(name, ch_data) for name, ch_data in channels_data.items()
-        )
+    def from_dict(cls, data: dict[str, Any]) -> 'Config':
+        channels_data = data.get('channels', {})
+        channels = tuple(starmap(Channel.from_dict, channels_data.items()))
         return cls(
-            root=data.get("root", False),
+            root=data.get('root', False),
             channels=channels,
-            default_channel=data.get("default_channel"),
+            default_channel=data.get('default_channel'),
         )
 
     def get_channel(self, name: str | None = None) -> Channel | None:
@@ -63,7 +62,7 @@ class Config:
             return self.channels[0] if self.channels else None
         return next((ch for ch in self.channels if ch.name == target), None)
 
-    def merge(self, other: "Config") -> "Config":
+    def merge(self, other: 'Config') -> 'Config':
         existing_names = {ch.name for ch in self.channels}
         merged_channels = list(self.channels)
         for ch in other.channels:

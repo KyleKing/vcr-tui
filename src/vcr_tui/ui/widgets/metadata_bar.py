@@ -11,11 +11,11 @@ class MetadataBarWidget(Static):
     def set_metadata(self, metadata: dict[str, Any]) -> None:
         self._metadata = metadata
         if metadata:
-            parts = [f"{k}: {v}" for k, v in metadata.items()]
-            self.update(" | ".join(parts))
+            parts = [f'{k}: {v}' for k, v in metadata.items()]
+            self.update(' | '.join(parts))
         else:
-            self.update("")
+            self.update('')
 
     def clear_metadata(self) -> None:
         self._metadata = {}
-        self.update("")
+        self.update('')

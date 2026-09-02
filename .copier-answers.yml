@@ -1,0 +1,24 @@
+# yamllint disable-file
+# Answer file maintained by Copier for: https://github.com/KyleKing/calcipy_template
+# DO NOT MODIFY THIS FILE. Edit by re-running copier and changing responses to the questions
+# Check into version control.
+_commit: 5.5.2
+_src_path: ../calcipy_template
+author_email: dev.act.kyle@gmail.com
+author_name: Kyle King
+author_username: kyleking
+cname: vcr-tui.kyleking.me
+copyright_date: '2026'
+development_branch: main
+doc_dir: docs
+extends_calcipy: false
+minimum_python: 3.11.0
+minimum_python_short: '3.11'
+package_name_py: vcr_tui
+project_description: TUI for previewing VCR cassettes and machine-generated files
+project_name: vcr-tui
+repository_namespace: kyleking
+repository_provider: https://github.com
+repository_source_url: https://github.com/kyleking/vcr-tui/blob/main
+repository_url: https://github.com/kyleking/vcr-tui
+

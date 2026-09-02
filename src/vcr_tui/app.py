@@ -7,8 +7,8 @@ from vcr_tui.ui.screens import MainScreen
 
 
 class VCRTUIApp(App[None]):
-    CSS_PATH = "ui/styles/app.tcss"
-    TITLE = "VCR-TUI"
+    CSS_PATH = 'ui/styles/app.tcss'
+    TITLE = 'VCR-TUI'
 
     def __init__(
         self,
