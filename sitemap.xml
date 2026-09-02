@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://vcr-tui.kyleking.me/</loc>
+         <lastmod>2026-09-02</lastmod>
+    </url>
+    <url>
+         <loc>https://vcr-tui.kyleking.me/docs/CHANGELOG/</loc>
+         <lastmod>2026-09-02</lastmod>
+    </url>
+    <url>
+         <loc>https://vcr-tui.kyleking.me/docs/DEVELOPER_GUIDE/</loc>
+         <lastmod>2026-09-02</lastmod>
+    </url>
+    <url>
+         <loc>https://vcr-tui.kyleking.me/docs/STYLE_GUIDE/</loc>
+         <lastmod>2026-09-02</lastmod>
+    </url>
+</urlset>
