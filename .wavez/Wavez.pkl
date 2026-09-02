@@ -116,6 +116,13 @@ astGrepRules: Listing<String> = new Listing {}
 /// Checks this project runs on its own changes, by name. Every built-in gate
 /// speaks Go, so a project in another language reaches the model with nothing
 /// behind its edits until it declares one here.
+///
+/// A check named after a built-in gate replaces it, the way a routine does:
+/// declaring `format` is how a Go project runs `gofumpt` instead of the
+/// built-in formatter, and how a Python one runs `ruff format`. The name is
+/// matched up to its first colon, so a repository holding several stacks
+/// declares `format:api` and `format:web` and replaces the one built-in
+/// formatter with both.
 checks: Mapping<String, Check> = new Mapping<String, Check> {}
 
 /// Functions `wavez -deadcode` should not report, as `package.Function`
@@ -207,13 +214,34 @@ class Tier {
 class Check {
   /// Globs whose change runs this check, matched against the whole path and
   /// then against the base name, so `*.py` names every Python file. An empty
-  /// list runs the check on every change.
+  /// list runs the check on every change. In a repository holding several
+  /// stacks this is what scopes a check to one of them
+  /// (`"apps/api/**/*.py"`).
   paths: Listing<String> = new Listing {}
 
-  /// The command line, run through `sh -c` from the project root. A non-zero
-  /// exit is the failure the model is handed, trimmed to the lines naming a
-  /// file the run changed.
+  /// Directory the command runs in, relative to the project root. A
+  /// repository holding several stacks runs each one's checks where that
+  /// stack's own config lives.
+  dir: String = "."
+
+  /// The command line, run through `sh -c` from `dir`. A non-zero exit is the
+  /// failure the model is handed, trimmed to the lines naming a file the run
+  /// changed.
+  ///
+  /// `{files}` in the command is replaced by the changed files this check
+  /// matched, each quoted and relative to `dir`. A command without it runs
+  /// over whatever it names, which is what a test suite wants; a formatter
+  /// wants the placeholder, since rewriting a whole repository on every edit
+  /// puts files the run never touched into the diff a human reads.
   command: String
+
+  /// Whether this check rewrites the files it reads, which is what a
+  /// formatter does. A rewriting check takes the worktree exclusively, so it
+  /// finishes before any check that reads what it wrote, and the command
+  /// should be the one that fixes (`ruff format .`) rather than the one that
+  /// reports (`ruff format --check .`): a run handed a whitespace complaint
+  /// spends turns guessing at what the formatter wanted.
+  rewrites: Boolean = false
 }
 
 /// One long-running service a routine step can bring up and take down.

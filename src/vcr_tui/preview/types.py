@@ -1,3 +1,5 @@
+"""Shared type definitions for the preview subsystem."""
+
 from dataclasses import dataclass
 from typing import Any
 

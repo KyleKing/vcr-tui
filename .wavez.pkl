@@ -9,15 +9,16 @@ context = new Listing {
 // CI would run, in the order a failure is cheapest to read.
 checks {
   // The formatter rewrites rather than reports, the way the Go format gate
-  // does. Checking instead made every whitespace slip a turn the model spent
-  // guessing at what ruff wanted.
+  // does, and only over what the run changed: reformatting the whole tree on
+  // every edit puts files the run never touched into the diff.
   ["format"] {
     paths = new Listing { "*.py" }
-    command = "uv run ruff format ."
+    command = "uv run ruff format {files}"
+    rewrites = true
   }
   ["lint"] {
     paths = new Listing { "*.py" }
-    command = "uv run ruff check ."
+    command = "uv run ruff check {files}"
   }
   ["types"] {
     paths = new Listing { "*.py" }
