@@ -1,5 +1,9 @@
 amends ".wavez/Wavez.pkl"
 
+context = new Listing {
+  "AGENTS.md"
+}
+
 // Every built-in gate speaks Go, so a Python project has nothing behind its
 // edits until it declares its own. These are the four commands this project's
 // CI would run, in the order a failure is cheapest to read.

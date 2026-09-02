@@ -31,6 +31,9 @@ uv run vcr-tui        # run the app
 uv run vcr-tui files  # CLI subcommands
 ```
 
+Always reach a tool through `uv run`, never through `.venv/bin/…`: the harness
+allows `uv` and stops to ask about a binary inside the project it cannot read.
+
 Checks (run via `uv run`):
 
 - **ruff** — lint, line length 100, py311 target:
