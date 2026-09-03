@@ -4,7 +4,7 @@ from vcr_tui.config.models import Channel, Config, ExtractionRule
 
 
 def get_default_config() -> Config:
-    """Return the default vcr and yaml channels used when no config exists."""
+    """Return the default vcr, json, and yaml channels used when no config exists."""
     return Config(
         root=False,
         channels=(
@@ -28,6 +28,17 @@ def get_default_config() -> Config:
                         formatter='json',
                         label='Request Body',
                         metadata_keys=('request.method', 'request.uri'),
+                    ),
+                ),
+            ),
+            Channel(
+                name='json',
+                glob_patterns=('**/*.json',),
+                extraction_rules=(
+                    ExtractionRule(
+                        path='.',
+                        formatter='json',
+                        label='Full JSON',
                     ),
                 ),
             ),

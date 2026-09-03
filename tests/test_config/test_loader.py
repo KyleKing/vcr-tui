@@ -110,7 +110,7 @@ class TestLoadConfig:
         )
         config = load_config(tmp_path)
         names = {ch.name for ch in config.channels}
-        assert names == {'vcr', 'yaml', 'global-only', 'local-only'}
+        assert names == {'vcr', 'json', 'yaml', 'global-only', 'local-only'}
         assert config.default_channel == 'local-only'
 
     def test_local_overrides_global_channel(self, tmp_path: Path, global_config: Config) -> None:

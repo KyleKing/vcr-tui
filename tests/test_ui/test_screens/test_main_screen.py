@@ -155,9 +155,10 @@ async def test_reload_picks_up_new_files(tmp_path: Path) -> None:
 async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
     """`c` cycles to the next enabled channel and rediscovers off the UI thread.
 
-    The default vcr channel only matches files under a cassettes/ directory,
-    while the yaml channel matches any *.yaml file; a file outside any
-    cassettes/ directory appears only after switching channels.
+    The default vcr channel only matches YAML files under a cassettes/
+    directory, while the json and yaml channels match any *.json / *.yaml
+    file; files outside any cassettes/ directory appear only after switching
+    channels.
     """
     directory = tmp_path / 'tree'
     (directory / 'cassettes').mkdir(parents=True)
@@ -166,6 +167,8 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
     )
     standalone = directory / 'standalone_doc.yaml'
     standalone.write_text('key: value\n', encoding='utf-8')
+    standalone_json = directory / 'standalone_data.json'
+    standalone_json.write_text('{"key": "value"}\n', encoding='utf-8')
 
     app = VCRTUIApp(directory, get_default_config())
     async with app.run_test() as pilot:
@@ -179,6 +182,17 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
         assert screen._resolved_channel_name() == 'vcr'
         names = [p.name for p in file_list._files]
         assert standalone.name not in names
+        assert standalone_json.name not in names
+
+        await pilot.press('c')
+        await pilot.app.workers.wait_for_complete()
+        await pilot.pause()
+
+        assert screen.channel == 'json'
+        assert 'channel: json' in str(header.content)
+        names = [p.name for p in file_list._files]
+        assert standalone_json.name in names
+        assert standalone.name not in names
 
         await pilot.press('c')
         await pilot.app.workers.wait_for_complete()
@@ -190,7 +204,8 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
         assert standalone.name in names
 
         # Selection is kept when the previously selected file survives the
-        # channel switch (example_api.yaml is matched by both channels).
+        # channel switch; wrapping back to vcr keeps example_api.yaml, which
+        # both channels match.
         assert file_list.highlighted == names.index('example_api.yaml')
 
         # Cycling wraps back to the first enabled channel.
@@ -198,4 +213,6 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
         await pilot.app.workers.wait_for_complete()
         await pilot.pause()
         assert screen._resolved_channel_name() == 'vcr'
+        names = [p.name for p in file_list._files]
+        assert file_list.highlighted == names.index('example_api.yaml')
         assert standalone.name not in [p.name for p in file_list._files]
