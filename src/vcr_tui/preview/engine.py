@@ -128,7 +128,7 @@ class PreviewEngine:
             return True
 
         rule_parts = rule_path.lstrip('.').split('.')
-        key_parts = self._normalize_path(key_path).split('.')
+        key_parts = key_path.split('.')
 
         if len(key_parts) < len(rule_parts):
             return False
@@ -142,11 +142,6 @@ class PreviewEngine:
                 return False
 
         return True
-
-    def _normalize_path(self, path: str) -> str:
-        import re
-
-        return re.sub(r'\[(\d+)\]', r'[\1]', path)
 
     def _extract_metadata(
         self,
