@@ -1,9 +1,9 @@
 # Next Steps
 
-A prioritized roadmap written from the actual state of the tree: ~900 lines of
+A prioritized roadmap written from the actual state of the tree: ~950 lines of
 working code in `src/vcr_tui` (CLI + Textual TUI for previewing VCR cassettes),
-one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 56 passing
-tests covering `preview/formatters.py` and `preview/yaml_parser.py` only.
+one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 144 passing
+tests at 95% statement coverage.
 
 ## 0. Template adoption follow-ups
 
