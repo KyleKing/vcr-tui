@@ -133,6 +133,19 @@ deadcodeAllow: Listing<String> = new Listing {
   "*.With*"
 }
 
+/// Golden fixtures, as path globs. A fixture is compared byte for byte, so a
+/// tool rewrites it rather than a person editing it, and a run that
+/// regenerates one to make its own change pass has removed the only check
+/// that would have caught the change. A run that rewrites one has to say so
+/// in its closing answer.
+fixtures: Listing<String> = new Listing {
+  "*.ambr"
+  "*.golden"
+  "*.raw"
+  "*.snap"
+  "**/__snapshots__/**"
+}
+
 /// Command run before every tool call, as an argv with the program first. It
 /// is executed directly, never through a shell. It reads a JSON payload on
 /// stdin (event, tool, input, paths) and answers with its exit status: 0

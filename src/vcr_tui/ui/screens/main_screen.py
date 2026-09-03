@@ -32,7 +32,7 @@ class MainScreen(Screen[None]):
     # exist on Screen and Tab silently stops moving focus.
     BINDINGS = [
         Binding('q', 'quit', 'Quit'),
-        Binding('r', 'reload_files', 'Reload files'),
+        Binding('r', 'reload_files', 'Rescan'),
         Binding('/', 'filter_panes', 'Filter'),
         Binding('c', 'cycle_channel', 'Cycle channel'),
     ]
