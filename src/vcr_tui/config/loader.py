@@ -1,3 +1,5 @@
+"""Discovery and merging of layered TOML configuration files."""
+
 import tomllib
 from pathlib import Path
 
@@ -34,6 +36,7 @@ def _load_config_file(path: Path) -> Config:
 
 
 def load_global_config() -> Config | None:
+    """Load the user-level config file, if one exists."""
     config_dir = Path(platformdirs.user_config_dir('vcr-tui'))
     for name in CONFIG_NAMES:
         config_file = config_dir / name
@@ -43,6 +46,7 @@ def load_global_config() -> Config | None:
 
 
 def load_config(start_path: Path | None = None) -> Config:
+    """Merge defaults, the global config, and local configs from innermost out."""
     if start_path is None:
         start_path = Path.cwd()
 

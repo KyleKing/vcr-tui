@@ -1,3 +1,5 @@
+"""Widget listing the discovered cassette files."""
+
 from pathlib import Path
 from typing import Any
 
@@ -7,7 +9,10 @@ from textual.widgets.option_list import Option
 
 
 class FileSelected(Message):
+    """Posted when the user picks a file from the list."""
+
     def __init__(self, file_path: Path) -> None:
+        """Carry the chosen file path."""
         self.file_path = file_path
         super().__init__()
 
@@ -16,15 +21,18 @@ class FileListWidget(OptionList):
     """File list with display-only substring filtering (case-insensitive, on name)."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """Set up the empty list with no filter."""
         super().__init__(**kwargs)
         self._files: list[Path] = []
         self._filter: str | None = None
 
     @property
     def filter(self) -> str | None:
+        """The active filter, or None when unfiltered."""
         return self._filter
 
     def set_files(self, files: list[Path]) -> None:
+        """Replace the full set of files and reapply the filter."""
         self._files = files
         self._apply_filter()
 
@@ -54,11 +62,13 @@ class FileListWidget(OptionList):
             self.add_option(Option(file_path.name, id=str(file_path)))
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+        """Post FileSelected when a file is chosen."""
         if event.option.id:
             file_path = Path(event.option.id)
             self.post_message(FileSelected(file_path))
 
     def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+        """Post FileSelected as the highlight moves."""
         if event.option.id:
             file_path = Path(event.option.id)
             self.post_message(FileSelected(file_path))

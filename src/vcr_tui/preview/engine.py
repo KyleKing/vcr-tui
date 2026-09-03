@@ -1,3 +1,5 @@
+"""Core engine that discovers cassette files and builds previews."""
+
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -11,10 +13,14 @@ EXCLUDED_DIRS = frozenset({'.git', '.venv', 'venv', 'node_modules', '__pycache__
 
 
 class PreviewEngine:
-    def __init__(self, config: Config):
+    """Finds cassette files and formats the values selected from them."""
+
+    def __init__(self, config: Config) -> None:
+        """Store the configuration used for every later operation."""
         self.config = config
 
     def discover_files(self, directory: Path, channel_name: str | None = None) -> list[Path]:
+        """List files under the directory matching the channel's glob patterns."""
         channel = self.config.get_channel(channel_name)
         if not channel:
             return []
@@ -38,7 +44,8 @@ class PreviewEngine:
             return False
         return rel_path.match(self._relativize_pattern(pattern, directory.name))
 
-    def _relativize_pattern(self, pattern: str, directory_name: str) -> str:
+    @staticmethod
+    def _relativize_pattern(pattern: str, directory_name: str) -> str:
         """Make a glob pattern match paths relative to the start directory.
 
         ``PurePath.match`` treats ``**`` as a single ``*`` level, so
@@ -56,7 +63,9 @@ class PreviewEngine:
             return stripped[len(prefix) :]
         return stripped
 
-    def get_keys(self, file_path: Path) -> list[YAMLKey]:
+    @staticmethod
+    def get_keys(file_path: Path) -> list[YAMLKey]:
+        """List the selectable YAML keys contained in the file."""
         return get_yaml_keys(file_path)
 
     def preview_key(
@@ -65,6 +74,7 @@ class PreviewEngine:
         key_path: str,
         channel_name: str | None = None,
     ) -> PreviewResult:
+        """Format the value at one key path using the matching extraction rule."""
         data = load_yaml(file_path)
         value = get_value_at_path(data, key_path)
 
@@ -90,6 +100,7 @@ class PreviewEngine:
         file_path: Path,
         channel_name: str | None = None,
     ) -> PreviewResult:
+        """Format the whole file as YAML."""
         data = load_yaml(file_path)
         channel = self.config.get_channel(channel_name)
 
@@ -120,7 +131,8 @@ class PreviewEngine:
                 return rule
         return None
 
-    def _path_matches_rule(self, key_path: str, rule_path: str) -> bool:
+    @staticmethod
+    def _path_matches_rule(key_path: str, rule_path: str) -> bool:
         if rule_path == '.':
             return True
 
@@ -167,7 +179,8 @@ class PreviewEngine:
 
         return metadata
 
-    def _get_base_path(self, key_path: str) -> str:
+    @staticmethod
+    def _get_base_path(key_path: str) -> str:
         parts = key_path.rsplit('.', 1)
         return parts[0] if len(parts) > 1 else ''
 

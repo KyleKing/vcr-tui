@@ -1,7 +1,10 @@
+"""Built-in channel and extraction configuration."""
+
 from vcr_tui.config.models import Channel, Config, ExtractionRule
 
 
 def get_default_config() -> Config:
+    """Return the default vcr and yaml channels used when no config exists."""
     return Config(
         root=False,
         channels=(

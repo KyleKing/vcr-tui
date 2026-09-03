@@ -85,10 +85,12 @@ class TestFromDict:
             }
         )
         named = config.get_channel('a')
-        assert named is not None and named.name == 'a'
+        assert named is not None
+        assert named.name == 'a'
         default = config.get_channel()
         # default_channel wins
-        assert default is not None and default.name == 'b'
+        assert default is not None
+        assert default.name == 'b'
         assert config.get_channel('zzz') is None
 
     def test_get_channel_falls_back_to_first(self) -> None:

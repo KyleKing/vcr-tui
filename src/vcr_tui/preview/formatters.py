@@ -1,4 +1,7 @@
+"""Content formatters that render extracted values for preview."""
+
 import json
+import re
 from io import StringIO
 from typing import Any, assert_never
 
@@ -12,6 +15,7 @@ _yaml.default_flow_style = False
 
 
 def format_content(content: Any, formatter: FormatterType) -> str:
+    """Render a value as a preview string using the named formatter."""
     match formatter:
         case 'json':
             return _format_json(content)
@@ -52,16 +56,83 @@ def _format_text(content: Any) -> str:
     return content.replace('\\n', '\n').replace('\\t', '\t').replace('\\r', '')
 
 
+_TAG_RE = re.compile(r'<[^>]*>')
+
+
 def _format_html(content: Any) -> str:
+    """Pretty-print well-formed markup, falling back to the verbatim string."""
     if not isinstance(content, str):
         return str(content)
     try:
-        from xml.dom.minidom import parseString
-
-        dom = parseString(content)
-        return dom.toprettyxml(indent='  ')
-    except Exception:
+        return _indent_markup(content)
+    except _MalformedMarkupError:
         return content
+
+
+class _MalformedMarkupError(Exception):
+    """Raised internally when markup does not look well-formed."""
+
+
+def _normalize_html_to_xml(content: str) -> str:
+    """Rewrite HTML void tags as self-closing so they balance like XML."""
+    void_tags = (
+        'area',
+        'base',
+        'br',
+        'col',
+        'embed',
+        'hr',
+        'img',
+        'input',
+        'link',
+        'meta',
+        'param',
+        'source',
+        'track',
+        'wbr',
+    )
+    pattern = re.compile(
+        r'<(' + '|'.join(void_tags) + r')((?:[^>"]|"[^"]*")*?)\s*/?>',
+        flags=re.IGNORECASE,
+    )
+    return pattern.sub(r'<\1\2 />', content)
+
+
+def _indent_markup(content: str) -> str:
+    """Re-emit tag soup one element per line with two-space nesting.
+
+    Tags are only tokenized and stacked, never parsed as XML, so no entity
+    or DTD processing ever runs on the previewed content.
+    """
+    normalized = _normalize_html_to_xml(content)
+    lines: list[str] = []
+    stack: list[str] = []
+    pos = 0
+    for match in _TAG_RE.finditer(normalized):
+        text = normalized[pos : match.start()]
+        if text.strip():
+            lines.append('  ' * len(stack) + text.strip())
+        pos = match.end()
+        tag = match.group(0)
+        name = tag[1:].lstrip('/').split()[0].rstrip('/')
+        if tag.startswith(('<?', '<!')):
+            lines.append('  ' * len(stack) + tag)
+        elif tag.startswith('</'):
+            if not stack or stack[-1] != name:
+                raise _MalformedMarkupError from None
+            stack.pop()
+            lines.append('  ' * len(stack) + tag)
+        elif tag.endswith('/>'):
+            lines.append('  ' * len(stack) + tag)
+        else:
+            lines.append('  ' * len(stack) + tag)
+            stack.append(name)
+    trailing = normalized[pos:]
+    if trailing.strip():
+        lines.append('  ' * len(stack) + trailing.strip())
+    if stack:
+        raise _MalformedMarkupError from None
+    return '\n'.join(lines)
 
 
 def _format_toml(content: Any) -> str:

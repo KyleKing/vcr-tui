@@ -39,7 +39,7 @@ class _Harness:
         outer = self
 
         class _App(App[None]):
-            def compose(self):  # noqa: ANN201, D102
+            def compose(self) -> Any:
                 yield outer._widget
 
         return _App()
@@ -71,7 +71,7 @@ async def test_yaml_viewer_widget_filter_lifecycle(cassette_keys: list[YAMLKey])
     from textual.app import App
 
     class _App(App[None]):
-        def compose(self):  # noqa: ANN201
+        def compose(self):
             yield YAMLViewerWidget(id='yaml-viewer')
 
     app = _App()
@@ -98,7 +98,7 @@ async def test_yaml_viewer_widget_highlight_survives_filter_change(
     from textual.app import App
 
     class _App(App[None]):
-        def compose(self):  # noqa: ANN201
+        def compose(self):
             yield YAMLViewerWidget(id='yaml-viewer')
 
     app = _App()

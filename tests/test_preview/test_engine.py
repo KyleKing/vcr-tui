@@ -260,7 +260,12 @@ class TestPathMatching:
         ],
     )
     def test_path_matches_rule(
-        self, engine: PreviewEngine, key_path: str, rule_path: str, expected: bool
+        self,
+        engine: PreviewEngine,
+        key_path: str,
+        rule_path: str,
+        *,
+        expected: bool,
     ) -> None:
         assert engine._path_matches_rule(key_path, rule_path) is expected
 

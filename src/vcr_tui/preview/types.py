@@ -6,6 +6,8 @@ from typing import Any
 
 @dataclass(frozen=True)
 class PreviewResult:
+    """A formatted value ready for display, plus where it came from."""
+
     content: str
     formatter: str
     metadata: dict[str, Any]
@@ -15,6 +17,8 @@ class PreviewResult:
 
 @dataclass(frozen=True)
 class YAMLKey:
+    """One selectable line of a YAML document."""
+
     path: str
     display: str
     depth: int

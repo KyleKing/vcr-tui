@@ -1,3 +1,4 @@
+"""YAML loading and key-path access for previewed files."""
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,8 @@ _yaml.preserve_quotes = True
 
 
 def load_yaml(file_path: Path) -> Any:
-    with file_path.open() as f:
+    """Load a YAML document from disk."""
+    with file_path.open(encoding='utf-8') as f:
         return _yaml.load(f)
 
 
@@ -52,11 +54,13 @@ def _extract_keys(data: Any, prefix: str = '', depth: int = 0) -> list[YAMLKey]:
 
 
 def get_yaml_keys(file_path: Path) -> list[YAMLKey]:
+    """List every selectable key in the file, parents before children."""
     data = load_yaml(file_path)
     return _extract_keys(data)
 
 
 def get_value_at_path(data: Any, path: str) -> Any:
+    """Resolve a dotted key path against loaded YAML data."""
     if not path or path == '.':
         return data
 

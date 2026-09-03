@@ -133,15 +133,25 @@ known-first-party = ['vcr_tui']
 ]
 'tests/*.py' = [
   'assert', # Use of `assert` detected
+  'compare-to-empty-string', # `x == ''` can be simplified to `not x` (assertion readability in tests)
+  'import-outside-top-level', # `import` should be at the top-level of a file
   'import-private-name', # Private name import `_<>` from external module
+  'magic-value-comparison', # Magic value used in comparison
   'missing-return-type-private-function', # Missing return type annotation for private function `test_make_diffable`
   'missing-return-type-undocumented-public-function', # Missing return type annotation for public function
   'missing-type-function-argument', # Missing type annotation for function argument
+  'no-self-use', # pytest classes group tests rather than carry state
+  'private-member-access', # a test reaching a private name is testing it
+  'pytest-fixture-autouse', # `autouse=True` fixture in test module
   'pytest-missing-fixture-name-underscore', # flake8-pytest-style: fixture does not return
   'too-many-positional-arguments', # Too many positional arguments (6/5)
+  'undocumented-public-class', # pytest classes group tests rather than carry state
   'undocumented-public-function', # Missing docstring in public function
+  'undocumented-public-method', # pytest classes group tests rather than carry state
   'undocumented-public-module', # Missing docstring in public module
+  'unspecified-encoding', # `open` without explicit `encoding` in tests
   'unused-function-argument', # Unused function argument: `line`
+  'unused-method-argument', # test method argument unused
 ]
 
 [tool.ruff.lint.pydocstyle]

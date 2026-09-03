@@ -1,3 +1,5 @@
+"""Command-line entry points for the VCR-TUI tool."""
+
 from pathlib import Path
 
 import click
@@ -17,6 +19,7 @@ from vcr_tui.preview import PreviewEngine
 @click.option('--channel', '-c', help='Channel to use for file matching')
 @click.pass_context
 def main(ctx: click.Context, directory: Path, channel: str | None) -> None:
+    """Load config for the directory and launch the TUI when no subcommand runs."""
     ctx.ensure_object(dict)
     ctx.obj['directory'] = directory.resolve()
     ctx.obj['channel'] = channel
@@ -35,6 +38,7 @@ def _launch_tui(directory: Path, config: Config, channel: str | None) -> None:
 @main.command()
 @click.pass_context
 def files(ctx: click.Context) -> None:
+    """Print each discovered cassette file relative to the directory."""
     engine: PreviewEngine = ctx.obj['engine']
     directory: Path = ctx.obj['directory']
     channel: str | None = ctx.obj['channel']
@@ -48,6 +52,7 @@ def files(ctx: click.Context) -> None:
 @click.argument('file', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.pass_context
 def keys(ctx: click.Context, file: Path) -> None:
+    """Print the selectable keys of a file as an indented tree."""
     engine: PreviewEngine = ctx.obj['engine']
 
     yaml_keys = engine.get_keys(file)
@@ -61,6 +66,7 @@ def keys(ctx: click.Context, file: Path) -> None:
 @click.option('--key', '-k', help='Specific key path to preview')
 @click.pass_context
 def preview(ctx: click.Context, file: Path, key: str | None) -> None:
+    """Print the formatted preview of a file or one of its keys."""
     engine: PreviewEngine = ctx.obj['engine']
     channel: str | None = ctx.obj['channel']
 
@@ -77,6 +83,7 @@ def preview(ctx: click.Context, file: Path, key: str | None) -> None:
 @main.command()
 @click.pass_context
 def channels(ctx: click.Context) -> None:
+    """Print the configured channels, their status, and their patterns."""
     config = ctx.obj['config']
 
     for channel in config.channels:

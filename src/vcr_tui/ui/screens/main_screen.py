@@ -1,4 +1,7 @@
+"""Main screen wiring the panes, filtering, and preview flow together."""
+
 from pathlib import Path
+from typing import ClassVar
 
 from textual import events, work
 from textual.app import ComposeResult
@@ -19,18 +22,25 @@ from vcr_tui.ui.widgets import (
     YAMLViewerWidget,
 )
 
+MIN_CHANNELS_TO_CYCLE = 2
+
 
 class FilesDiscovered(Message):
+    """Posted when the background file scan finishes."""
+
     def __init__(self, files: list[Path]) -> None:
+        """Carry the discovered files."""
         self.files = files
         super().__init__()
 
 
 class MainScreen(Screen[None]):
+    """Primary screen hosting the file, key, preview, and metadata panes."""
+
     # NOTE: Screen already binds tab/shift+tab to app.focus_next/app.focus_previous;
     # do not override them with a bare 'focus_next' action — that action does not
     # exist on Screen and Tab silently stops moving focus.
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding('q', 'quit', 'Quit'),
         Binding('r', 'reload_files', 'Rescan'),
         Binding('/', 'filter_panes', 'Filter'),
@@ -47,6 +57,7 @@ class MainScreen(Screen[None]):
         config: Config,
         channel: str | None = None,
     ) -> None:
+        """Store the browsing context and build the preview engine."""
         super().__init__()
         self.directory = directory
         self.config = config
@@ -57,9 +68,15 @@ class MainScreen(Screen[None]):
 
     @property
     def filter_target(self) -> str:
+        """The pane the filter input currently targets."""
         return self._filter_target
 
     def compose(self) -> ComposeResult:
+        """Lay out the header, sidebar, content panes, and footer.
+
+        Yields:
+            The widgets of the main screen.
+        """
         yield Header()
         with Horizontal(id='main-container'):
             with Vertical(id='sidebar'):
@@ -72,17 +89,19 @@ class MainScreen(Screen[None]):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Title the screen, start the scan, and focus the file list."""
         self._update_header_title()
         self._discover_files()
         self.query_one('#file-list').focus()
 
     def action_reload_files(self) -> None:
+        """Rescan the directory for files."""
         self._discover_files()
 
     def action_cycle_channel(self) -> None:
         """Switch to the next enabled channel and rediscover files."""
         enabled = [ch.name for ch in self.config.channels if ch.enabled]
-        if len(enabled) < 2:
+        if len(enabled) < MIN_CHANNELS_TO_CYCLE:
             return
         current = self._resolved_channel_name()
         try:
@@ -114,15 +133,18 @@ class MainScreen(Screen[None]):
         filter_input.focus()
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        """Forward filter input changes to the targeted pane."""
         if event.input.id == self.FILTER_INPUT_ID:
             self._set_filter(event.value)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Apply the filter and return focus to the pane."""
         if event.input.id == self.FILTER_INPUT_ID:
             self._set_filter(event.value)
             self._filtered_pane().focus()
 
     def on_key(self, event: events.Key) -> None:
+        """Clear the filter on escape when a filter is active."""
         if event.key != 'escape':
             return
         pane = self._filtered_pane()
@@ -151,6 +173,7 @@ class MainScreen(Screen[None]):
         self.post_message(FilesDiscovered(files))
 
     def on_files_discovered(self, event: FilesDiscovered) -> None:
+        """Populate the file list once the scan finishes."""
         files = event.files
         file_list = self.query_one('#file-list', FileListWidget)
         file_list.set_files(files)
@@ -171,6 +194,7 @@ class MainScreen(Screen[None]):
         yaml_viewer.set_keys(keys)
 
     def on_file_selected(self, event: FileSelected) -> None:
+        """Load the selected file's keys and clear the old preview."""
         self._current_file = event.file_path
         self._load_keys(event.file_path)
 
@@ -180,6 +204,7 @@ class MainScreen(Screen[None]):
         metadata_bar.clear_metadata()
 
     def on_key_selected(self, event: KeySelected) -> None:
+        """Preview the selected key into the preview and metadata panes."""
         if not self._current_file:
             return
 
@@ -196,4 +221,5 @@ class MainScreen(Screen[None]):
         metadata_bar.set_metadata(result.metadata)
 
     def action_quit(self) -> None:
+        """Exit the application."""
         self.app.exit()
