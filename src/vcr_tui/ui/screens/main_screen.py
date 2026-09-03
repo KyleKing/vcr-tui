@@ -33,11 +33,13 @@ class MainScreen(Screen[None]):
     BINDINGS = [
         Binding('q', 'quit', 'Quit'),
         Binding('r', 'reload_files', 'Reload files'),
-        Binding('/', 'filter_files', 'Filter files'),
+        Binding('/', 'filter_panes', 'Filter'),
         Binding('c', 'cycle_channel', 'Cycle channel'),
     ]
 
     FILTER_INPUT_ID = 'filter-input'
+    FILES_PANE = 'files'
+    KEYS_PANE = 'keys'
 
     def __init__(
         self,
@@ -51,6 +53,11 @@ class MainScreen(Screen[None]):
         self.channel = channel
         self.engine = PreviewEngine(config)
         self._current_file: Path | None = None
+        self._filter_target: str = self.FILES_PANE
+
+    @property
+    def filter_target(self) -> str:
+        return self._filter_target
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -94,32 +101,49 @@ class MainScreen(Screen[None]):
         name = self._resolved_channel_name()
         self.sub_title = f'channel: {name}' if name else None
 
-    def action_filter_files(self) -> None:
-        self.query_one(f'#{self.FILTER_INPUT_ID}', Input).focus()
+    def action_filter_panes(self) -> None:
+        """Focus the filter input, aimed at whichever pane currently has focus."""
+        if self.focused is not None and self.focused.id == 'yaml-viewer':
+            self._filter_target = self.KEYS_PANE
+        else:
+            self._filter_target = self.FILES_PANE
+        filter_input = self.query_one(f'#{self.FILTER_INPUT_ID}', Input)
+        filter_input.placeholder = (
+            'Filter YAML keys…' if self._filter_target == self.KEYS_PANE else 'Filter files…'
+        )
+        filter_input.focus()
 
     def on_input_changed(self, event: Input.Changed) -> None:
         if event.input.id == self.FILTER_INPUT_ID:
-            self.query_one('#file-list', FileListWidget).set_filter(event.value)
+            self._set_filter(event.value)
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == self.FILTER_INPUT_ID:
-            self.query_one('#file-list', FileListWidget).set_filter(event.value)
-            self.query_one('#file-list', FileListWidget).focus()
+            self._set_filter(event.value)
+            self._filtered_pane().focus()
 
     def on_key(self, event: events.Key) -> None:
         if event.key != 'escape':
             return
-        file_list = self.query_one('#file-list', FileListWidget)
+        pane = self._filtered_pane()
         input_focused = self.focused is not None and self.focused.id == self.FILTER_INPUT_ID
-        if input_focused or file_list.filter is not None:
+        if input_focused or pane.filter is not None:
             event.stop()
             self._clear_filter()
+
+    def _filtered_pane(self) -> FileListWidget | YAMLViewerWidget:
+        if self._filter_target == self.KEYS_PANE:
+            return self.query_one('#yaml-viewer', YAMLViewerWidget)
+        return self.query_one('#file-list', FileListWidget)
+
+    def _set_filter(self, value: str | None) -> None:
+        self._filtered_pane().set_filter(value)
 
     def _clear_filter(self) -> None:
         filter_input = self.query_one(f'#{self.FILTER_INPUT_ID}', Input)
         filter_input.value = ''
-        self.query_one('#file-list', FileListWidget).set_filter(None)
-        self.query_one('#file-list', FileListWidget).focus()
+        self._set_filter(None)
+        self._filtered_pane().focus()
 
     @work(thread=True, exclusive=True)
     def _discover_files(self) -> None:

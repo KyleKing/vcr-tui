@@ -3,12 +3,13 @@
 import shutil
 from pathlib import Path
 
+from textual.widgets import Input
 from textual.widgets._header import HeaderTitle
 
 from vcr_tui.app import VCRTUIApp
 from vcr_tui.config.defaults import get_default_config
 from vcr_tui.ui.screens.main_screen import MainScreen
-from vcr_tui.ui.widgets import FileListWidget
+from vcr_tui.ui.widgets import FileListWidget, YAMLViewerWidget
 
 CASSETTES = Path(__file__).parent.parent.parent.parent / 'fixtures' / 'cassettes'
 
@@ -70,6 +71,58 @@ async def test_escape_without_filter_leaves_focus_untouched(tmp_path: Path) -> N
         await pilot.press('escape')
         await pilot.pause()
         assert screen.focused is yaml_viewer
+
+
+async def test_filter_with_viewer_focused_targets_keys(tmp_path: Path) -> None:
+    """`/` with the YAML viewer focused filters keys, leaving the file list alone."""
+    directory = tmp_path / 'cassettes'
+    shutil.copytree(CASSETTES, directory)
+
+    app = VCRTUIApp(directory, get_default_config())
+    async with app.run_test() as pilot:
+        screen = pilot.app.screen
+        assert isinstance(screen, MainScreen)
+        file_list = screen.query_one('#file-list', FileListWidget)
+        yaml_viewer = screen.query_one('#yaml-viewer', YAMLViewerWidget)
+
+        await pilot.app.workers.wait_for_complete()
+        await pilot.pause()
+        initial_files = [p.name for p in file_list._files]
+        all_keys = [k.path for k in yaml_viewer._keys]
+        assert len(all_keys) > 1
+
+        await pilot.press('tab')
+        await pilot.pause()
+        assert screen.focused is yaml_viewer
+
+        await pilot.press('/')
+        await pilot.pause()
+        assert screen.focused.id == screen.FILTER_INPUT_ID
+        assert screen.filter_target == MainScreen.KEYS_PANE
+
+        # Pick a needle matching a strict subset of key paths.
+        needle = 'response'
+        matching = [p for p in all_keys if needle in p.casefold()]
+        assert 0 < len(matching) < len(all_keys)
+
+        await pilot.press(*needle)
+        await pilot.pause()
+        visible = [k.path for k in yaml_viewer._visible_keys()]
+        assert visible == matching
+        assert yaml_viewer.option_count == len(matching)
+        # The file list is untouched.
+        assert [p.name for p in file_list._visible_files()] == initial_files
+        assert file_list.option_count == len(initial_files)
+        assert file_list.filter is None
+
+        # Escape clears the key filter and refocuses the viewer.
+        await pilot.press('escape')
+        await pilot.pause()
+        assert [k.path for k in yaml_viewer._visible_keys()] == all_keys
+        assert screen.focused is yaml_viewer
+        assert (
+            'Filter YAML keys' in screen.query_one(f'#{screen.FILTER_INPUT_ID}', Input).placeholder
+        )
 
 
 async def test_reload_picks_up_new_files(tmp_path: Path) -> None:

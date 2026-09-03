@@ -15,6 +15,8 @@ class KeySelected(Message):
 
 
 class YAMLViewerWidget(OptionList):
+    """Key list with display-only substring filtering (case-insensitive, on path)."""
+
     BINDINGS = [
         Binding('j', 'cursor_down', 'Down', show=False),
         Binding('k', 'cursor_up', 'Up', show=False),
@@ -23,11 +25,39 @@ class YAMLViewerWidget(OptionList):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._keys: list[YAMLKey] = []
+        self._filter: str | None = None
+
+    @property
+    def filter(self) -> str | None:
+        return self._filter
 
     def set_keys(self, keys: list[YAMLKey]) -> None:
         self._keys = keys
+        self._apply_filter()
+
+    def set_filter(self, text: str | None) -> None:
+        """Set the display filter; None or '' clears it (full set is kept)."""
+        self._filter = text or None
+        highlighted_id = None
+        if self.highlighted is not None:
+            option = self.get_option_at_index(self.highlighted)
+            highlighted_id = option.id if option else None
+        self._apply_filter()
+        if highlighted_id is not None:
+            for index, key in enumerate(self._visible_keys()):
+                if key.path == highlighted_id:
+                    self.highlighted = index
+                    break
+
+    def _visible_keys(self) -> list[YAMLKey]:
+        if self._filter is None:
+            return self._keys
+        needle = self._filter.casefold()
+        return [k for k in self._keys if needle in k.path.casefold()]
+
+    def _apply_filter(self) -> None:
         self.clear_options()
-        for key in keys:
+        for key in self._visible_keys():
             indent = '  ' * key.depth
             display = f'{indent}{key.display}'
             self.add_option(Option(display, id=key.path))
