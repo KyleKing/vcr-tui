@@ -26,22 +26,12 @@ Still open from that migration:
 
 ## 1. Tests
 
-Covered so far: `preview/formatters.py` (`test_formatters.py`) and
-`preview/yaml_parser.py` (`test_yaml_parser.py`) — 56 tests plus the
-template's version smoke test. Still to write, in this order, using the
-existing fixture cassette:
-
-- **`preview/engine.py`** — `discover_files` against a `tmp_path` tree
-  (including `EXCLUDED_DIRS` filtering), `preview_key` / `preview_file` with
-  the default `vcr` channel, `_path_matches_rule` edge cases, metadata
-  extraction.
-- **`config/`** — `Config.from_dict`, `Config.merge`, `load_config` layering
-  (defaults → global → local files, `root = true` stopping the upward walk).
-- **CLI** — `files`, `keys`, `preview`, `channels` via `click.testing.CliRunner`.
-- **UI** — snapshot tests with `pytest-textual-snapshot` (already a dev
-  dependency) for `MainScreen` and the four widgets. `tests/test_ui`,
-  `tests/integration`, and `tests/test_config` currently hold only empty
-  `__init__.py` files.
+Done. The suite is 144 tests at 95% statement coverage, and every gap this
+section listed is closed: `preview/engine.py`, `config/`, the CLI through
+`click.testing.CliRunner`, and the UI through both `pytest-textual-snapshot`
+golden frames and `run_test()` pilot tests. What is left uncovered is the
+`__main__.py` entry point, `loader.py`'s upward-walk error branches, and a
+handful of widget edge cases, none of which is worth a test on its own.
 
 ## 2. Real bugs and rough edges found in the code
 
@@ -78,12 +68,11 @@ existing fixture cassette:
 
 ## 4. Housekeeping
 
-- `src/vcr_tui/utils/` is an empty package — delete or use it.
-- Stray empty `__init__.py` files in `tests/test_ui`, `tests/test_config`,
-  `tests/integration` (directories with no tests); keep the structure only as
-  tests are actually added.
-- `fixtures/cassettes/example_api.yaml` is used nowhere in the code — make it
-  the shared fixture for the test suite.
+- ~~`src/vcr_tui/utils/` is an empty package~~ — deleted, along with
+  `tests/integration` and `tests/test_ui/test_widgets`, which held nothing but
+  an `__init__.py`.
+- ~~`fixtures/cassettes/example_api.yaml` is used nowhere~~ — it is the shared
+  fixture the CLI, engine, and UI tests all copy into a `tmp_path` tree.
 - ~~Stray top-level docs~~ — done. `textual-guide.md` replaced the truncated
   `.claude/skills/textual/guide.md` and both root copies went, since the
   quick reference was byte-identical to the skill's; `SKILLS_SUMMARY.md`
