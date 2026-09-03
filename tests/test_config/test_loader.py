@@ -113,15 +113,12 @@ class TestLoadConfig:
         assert names == {'vcr', 'yaml', 'global-only', 'local-only'}
         assert config.default_channel == 'local-only'
 
-    def test_local_cannot_override_global_channel(
-        self, tmp_path: Path, global_config: Config
-    ) -> None:
-        # Pins current behaviour (suspected bug): merge keeps the existing (global)
-        # channel definition, so a local file redefining it changes nothing.
+    def test_local_overrides_global_channel(self, tmp_path: Path, global_config: Config) -> None:
+        # A local file redefining a global channel replaces it in place.
         _write_config(
             tmp_path / 'vcr-tui.toml',
             '[channels.global-only]\nglob_patterns = ["**/overridden.yaml"]\n',
         )
         config = load_config(tmp_path)
         channel = next(ch for ch in config.channels if ch.name == 'global-only')
-        assert channel.glob_patterns == ('**/g.yaml',)
+        assert channel.glob_patterns == ('**/overridden.yaml',)

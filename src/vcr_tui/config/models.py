@@ -63,10 +63,13 @@ class Config:
         return next((ch for ch in self.channels if ch.name == target), None)
 
     def merge(self, other: 'Config') -> 'Config':
-        existing_names = {ch.name for ch in self.channels}
         merged_channels = list(self.channels)
+        positions = {ch.name: i for i, ch in enumerate(merged_channels)}
         for ch in other.channels:
-            if ch.name not in existing_names:
+            if ch.name in positions:
+                merged_channels[positions[ch.name]] = ch
+            else:
+                positions[ch.name] = len(merged_channels)
                 merged_channels.append(ch)
         return Config(
             root=other.root or self.root,

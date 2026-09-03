@@ -108,11 +108,6 @@ class TestMerge:
         merged = base.merge(other)
         assert {ch.name for ch in merged.channels} == {'a', 'b'}
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason='suspected bug: merge replaces nothing for existing channels, so a local '
-        'config cannot override a channel defined in a global one, only add new ones',
-    )
     def test_merge_overrides_existing_channel(self) -> None:
         base = Config.from_dict(
             {'channels': {'a': {'glob_patterns': ['**/base.yaml'], 'enabled': False}}}
