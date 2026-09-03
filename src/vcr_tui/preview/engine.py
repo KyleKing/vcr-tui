@@ -1,3 +1,4 @@
+import json
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,27 @@ from vcr_tui.preview.types import PreviewResult, YAMLKey
 from vcr_tui.preview.yaml_parser import get_value_at_path, get_yaml_keys, load_yaml
 
 EXCLUDED_DIRS = frozenset({'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.tox'})
+
+
+def _expand_json_strings(data: Any) -> Any:
+    """Copy ``data`` with every JSON-object/array string parsed into structure.
+
+    Strings that are not JSON, are invalid JSON, or parse to a bare scalar
+    (number, boolean, null) are kept exactly as they are.
+    """
+    if isinstance(data, dict):
+        return {key: _expand_json_strings(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [_expand_json_strings(item) for item in data]
+    if isinstance(data, str):
+        try:
+            parsed = json.loads(data)
+        except json.JSONDecodeError:
+            return data
+        if isinstance(parsed, (dict, list)):
+            return _expand_json_strings(parsed)
+        return data
+    return data
 
 
 class PreviewEngine:
@@ -93,18 +115,15 @@ class PreviewEngine:
         data = load_yaml(file_path)
         channel = self.config.get_channel(channel_name)
 
-        formatter: FormatterType = 'yaml'
         label: str | None = None
         if channel and channel.extraction_rules:
-            rule = channel.extraction_rules[0]
-            formatter = rule.formatter
-            label = rule.label
+            label = channel.extraction_rules[0].label
 
-        formatted = format_content(data, formatter)
+        formatted = format_content(_expand_json_strings(data), 'yaml')
 
         return PreviewResult(
             content=formatted,
-            formatter=formatter,
+            formatter='yaml',
             metadata={},
             source_path='.',
             label=label,

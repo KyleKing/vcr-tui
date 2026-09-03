@@ -80,10 +80,11 @@ class TestPreview:
     def test_file_preview_prints_yaml_document(self, runner: CliRunner, cassette: Path) -> None:
         result = runner.invoke(main, [str(cassette.parent), 'preview', str(cassette)])
         assert result.exit_code == 0
-        # File-level preview uses extraction_rules[0] of the vcr channel (json).
-        # The bodies are embedded JSON strings, so their quotes are escaped in the dump.
-        assert '\\"name\\": \\"John Doe\\"' in result.output
-        assert '"interactions": [' in result.output
+        # File-level preview dumps as yaml, with embedded JSON body strings
+        # expanded into nested yaml keys.
+        assert 'name: John Doe' in result.output
+        assert 'interactions:' in result.output
+        assert '\\"' not in result.output
 
     def test_key_preview_formats_json(self, runner: CliRunner, cassette: Path) -> None:
         result = runner.invoke(

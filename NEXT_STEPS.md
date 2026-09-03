@@ -48,9 +48,13 @@ handful of widget edge cases, none of which is worth a test on its own.
 - ~~`Config.merge` replaces nothing for existing channels~~ — done: a
   same-named channel in the later layer replaces the earlier one in place,
   matching how `root` and `default_channel` already resolved.
-- `preview_file` ignores all but `extraction_rules[0]` of a channel and returns
-  empty metadata; a file-level preview could run the rule end-to-end for
-  interaction 0 instead.
+- ~~`preview_file` ignores all but `extraction_rules[0]`~~ — it no longer
+  applies that rule's formatter to the whole document, which rendered a
+  cassette as one JSON dump with every response body escaped inside it. A
+  file preview dumps YAML with any embedded JSON string expanded in place, so
+  a nested payload reads as nested keys, which is the thing this tool is for.
+  It still carries no metadata, since a file-level preview names no
+  interaction to draw it from.
 - ~~`main_screen._load_files` does discovery synchronously on the UI
   thread~~ — done: a `@work(thread=True, exclusive=True)` worker posts
   `FilesDiscovered` back to the screen for the widget updates.

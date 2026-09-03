@@ -191,11 +191,54 @@ class TestPreviewKey:
 
 class TestPreviewFile:
     def test_uses_first_rule_of_channel(self, engine: PreviewEngine, cassette_path: Path) -> None:
+        # File-level preview always dumps as yaml; only the label comes from rules[0].
         result = engine.preview_file(cassette_path)
-        assert result.formatter == 'json'  # extraction_rules[0] of the default vcr channel
+        assert result.formatter == 'yaml'
         assert result.label == 'Response Body'
         assert result.source_path == '.'
         assert 'John Doe' in result.content
+
+    def test_json_body_string_renders_as_nested_keys(
+        self, engine: PreviewEngine, cassette_path: Path
+    ) -> None:
+        result = engine.preview_file(cassette_path)
+        assert 'name: John Doe' in result.content
+        assert 'email: john@example.com' in result.content
+        assert '\\"' not in result.content
+
+    def test_plain_string_value_survives_untouched(
+        self, engine: PreviewEngine, cassette_path: Path
+    ) -> None:
+        result = engine.preview_file(cassette_path)
+        assert 'uri: https://api.example.com/users/1' in result.content
+        assert 'message: OK' in result.content
+
+    def test_invalid_and_scalar_json_strings_stay_strings(
+        self, engine: PreviewEngine, tmp_path: Path
+    ) -> None:
+        path = _write_yaml(
+            tmp_path / 'odd.yaml',
+            {
+                'not_json': '{oops',
+                'number_string': '42',
+                'bool_string': 'true',
+                'null_string': 'null',
+            },
+        )
+        result = engine.preview_file(path)
+        assert "not_json: '{oops'" in result.content
+        assert "number_string: '42'" in result.content
+        assert "bool_string: 'true'" in result.content
+        assert "null_string: 'null'" in result.content
+
+    def test_loaded_data_is_not_mutated(self, engine: PreviewEngine, cassette_path: Path) -> None:
+        from vcr_tui.preview.yaml_parser import load_yaml
+
+        data = load_yaml(cassette_path)
+        before = data['interactions'][0]['response']['body']['string']
+        engine.preview_file(cassette_path)
+        assert data['interactions'][0]['response']['body']['string'] == before
+        assert isinstance(data['interactions'][0]['response']['body']['string'], str)
 
     def test_metadata_is_empty(self, engine: PreviewEngine, cassette_path: Path) -> None:
         # Pins current behaviour: preview_file never extracts metadata.
