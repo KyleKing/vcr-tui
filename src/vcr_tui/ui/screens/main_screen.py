@@ -34,6 +34,7 @@ class MainScreen(Screen[None]):
         Binding('q', 'quit', 'Quit'),
         Binding('r', 'reload_files', 'Reload files'),
         Binding('/', 'filter_files', 'Filter files'),
+        Binding('c', 'cycle_channel', 'Cycle channel'),
     ]
 
     FILTER_INPUT_ID = 'filter-input'
@@ -64,11 +65,34 @@ class MainScreen(Screen[None]):
         yield Footer()
 
     def on_mount(self) -> None:
+        self._update_header_title()
         self._discover_files()
         self.query_one('#file-list').focus()
 
     def action_reload_files(self) -> None:
         self._discover_files()
+
+    def action_cycle_channel(self) -> None:
+        """Switch to the next enabled channel and rediscover files."""
+        enabled = [ch.name for ch in self.config.channels if ch.enabled]
+        if len(enabled) < 2:
+            return
+        current = self._resolved_channel_name()
+        try:
+            index = enabled.index(current) if current is not None else -1
+        except ValueError:
+            index = -1
+        self.channel = enabled[(index + 1) % len(enabled)]
+        self._update_header_title()
+        self._discover_files()
+
+    def _resolved_channel_name(self) -> str | None:
+        channel = self.config.get_channel(self.channel)
+        return channel.name if channel is not None else None
+
+    def _update_header_title(self) -> None:
+        name = self._resolved_channel_name()
+        self.sub_title = f'channel: {name}' if name else None
 
     def action_filter_files(self) -> None:
         self.query_one(f'#{self.FILTER_INPUT_ID}', Input).focus()
