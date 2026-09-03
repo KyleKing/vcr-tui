@@ -55,7 +55,7 @@ Ask Claude:
 - 📖 This file: Quick start
 - 📋 `skills/README.md`: Complete guide
 - 📐 `skills/DIAGRAM.md`: Visual architecture
-- 📊 `../SKILLS_SUMMARY.md`: Implementation details
+- 📊 `skills/SUMMARY.md`: Implementation details
 
 **Framework Skills:**
 - 🎨 `skills/textual/`: Textual TUI framework

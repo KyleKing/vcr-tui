@@ -138,6 +138,21 @@ def action_delete(self) -> None:
     self.push_screen(ConfirmDialog(), handle_result)
 ```
 
+**Modes - Multiple Screen Stacks:**
+```python
+class MyApp(App):
+    MODES = {
+        'default': 'main',
+        'settings': 'settings_screen',
+        'help': 'help_screen',
+    }
+
+    DEFAULT_MODE = 'default'
+
+    def action_open_settings(self) -> None:
+        self.switch_mode('settings')
+```
+
 #### Widgets
 
 Reusable UI components managing rectangular screen regions.
@@ -156,6 +171,15 @@ class Hello(Widget):
 - Caches render results for performance
 - Provides `update()` method for refreshing content without full redraws
 - Best for simple text display widgets
+
+```python
+from textual.widgets import Static
+
+
+class StatusWidget(Static):
+    def update_status(self, message: str) -> None:
+        self.update(f'Status: {message}')
+```
 
 **Widget Features:**
 ```python
@@ -178,6 +202,31 @@ class CustomWidget(Widget):
         super().__init__()
         self.border_title = 'My Widget'
         self.tooltip = 'This is a helpful tooltip'
+```
+
+#### Containers
+
+Layout-organizing components for arranging widgets.
+
+**Built-in Containers:**
+- `Vertical` - stack widgets vertically
+- `Horizontal` - arrange widgets horizontally
+- `Grid` - grid-based layout
+- `Center` - center contents
+- `Container` - general-purpose container
+
+**Using Context Managers for Cleaner Composition:**
+```python
+from textual.containers import Vertical, Horizontal
+
+
+def compose(self) -> ComposeResult:
+    with Vertical():
+        yield Header()
+        with Horizontal():
+            yield Sidebar()
+            yield ContentArea()
+        yield Footer()
 ```
 
 ### CSS Styling System (TCSS)
@@ -270,6 +319,43 @@ Button {
 /* initial to reset to defaults */
 Button {
     border: initial;
+}
+```
+
+**Example TCSS File:**
+```css
+/* app.tcss */
+Screen {
+    background: $surface;
+}
+
+#header {
+    dock: top;
+    height: 3;
+    background: $primary;
+    color: $text;
+}
+
+#sidebar {
+    dock: left;
+    width: 30;
+    background: $panel;
+}
+
+Button {
+    margin: 1;
+
+    &:hover {
+        background: $accent;
+    }
+
+    &.success {
+        background: $success;
+    }
+
+    &.danger {
+        background: $error;
+    }
 }
 ```
 
@@ -368,6 +454,27 @@ class ChildWidget(Widget):
         return f'Value: {self.display_value}'
 ```
 
+**Advanced Control:**
+```python
+from textual.reactive import var
+
+
+class MyWidget(Widget):
+    # var() - reactive without refresh/layout changes
+    internal_counter = var(0)
+
+    def __init__(self) -> None:
+        super().__init__()
+        # set_reactive() - set without invoking watchers
+        self.set_reactive(MyWidget.count, 10)
+
+    def update_list(self) -> None:
+        my_list = [1, 2, 3]
+        my_list.append(4)
+        # mutate_reactive() - notify system of changes to mutable objects
+        self.mutate_reactive(MyWidget.my_list)
+```
+
 ---
 
 ## Directory Structure & Code Organization
@@ -411,6 +518,33 @@ project_name/
 │   └── test_widgets/
 ├── pyproject.toml
 └── README.md
+```
+
+#### Option 2: Component-Based Structure
+
+Best for smaller applications or when you want to keep related files together.
+
+```
+project_name/
+├── __init__.py
+├── __main__.py
+├── app.py
+└── components/
+    ├── __init__.py
+    ├── constants.py
+    ├── utils.py
+    ├── header/
+    │   ├── __init__.py
+    │   ├── header.py
+    │   └── header.tcss
+    ├── sidebar/
+    │   ├── __init__.py
+    │   ├── sidebar.py
+    │   └── sidebar.tcss
+    └── content/
+        ├── __init__.py
+        ├── content.py
+        └── content.tcss
 ```
 
 ### Organization Best Practices
@@ -506,6 +640,73 @@ class StatusPanel(Widget):
             yield StatusButton('Refresh')
 ```
 
+#### 4. Entry Point Pattern
+
+```python
+# app.py
+from textual.app import App
+# ... imports
+
+
+class MyApp(App):
+    # App implementation
+    pass
+
+
+# __main__.py
+from .app import MyApp
+
+
+def main() -> None:
+    app = MyApp()
+    app.run()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+#### 5. Separation of Concerns
+
+Keep business logic separate from UI components.
+
+```python
+# Good structure
+# business_logic/services.py
+class DataService:
+    async def fetch_data(self) -> dict:
+        # API calls, data processing
+        pass
+
+
+# business_logic/models.py
+from dataclasses import dataclass
+
+
+@dataclass
+class User:
+    id: int
+    name: str
+    email: str
+
+
+# widgets/user_panel.py
+from textual.widget import Widget
+from ..business_logic.services import DataService
+from ..business_logic.models import User
+
+
+class UserPanel(Widget):
+    def __init__(self) -> None:
+        super().__init__()
+        self.service = DataService()
+
+    async def load_user(self, user_id: int) -> None:
+        data = await self.service.fetch_data()
+        user = User(**data)
+        self.display_user(user)
+```
+
 ---
 
 ## Testing
@@ -593,6 +794,14 @@ await pilot.click('#file', shift=True)
 await pilot.click('#item', ctrl=True)
 ```
 
+**Screen Manipulation:**
+```python
+# Custom terminal size
+async with app.run_test(size=(80, 24)) as pilot:
+    # Test responsive behavior
+    pass
+```
+
 **Async Handling:**
 ```python
 # Wait for pending messages to process
@@ -600,6 +809,112 @@ await pilot.pause()
 
 # Essential before assertions to ensure UI has updated
 # This is the most common mistake in testing!
+```
+
+### Complete Test Example
+
+```python
+import pytest
+from textual.widgets import Button, Input, Static
+from my_app import MyApp
+
+
+@pytest.mark.asyncio
+async def test_user_input_flow():
+    """Test complete user interaction flow."""
+    app = MyApp()
+
+    async with app.run_test() as pilot:
+        # Enter text in input field
+        input_widget = app.query_one(Input)
+        input_widget.value = 'test@example.com'
+
+        # Or use pilot to simulate typing
+        await pilot.click(Input)
+        await pilot.press('t', 'e', 's', 't')
+
+        # Submit form
+        await pilot.click('#submit-button')
+
+        # Wait for processing
+        await pilot.pause()
+
+        # Verify results
+        status = app.query_one('#status', Static)
+        assert 'Success' in str(status.renderable)
+
+        # Check CSS classes
+        assert app.query_one('#form').has_class('submitted')
+
+
+@pytest.mark.asyncio
+async def test_navigation():
+    """Test keyboard navigation."""
+    app = MyApp()
+
+    async with app.run_test() as pilot:
+        # Tab through focusable elements
+        await pilot.press('tab')
+        await pilot.pause()
+
+        # Check focus
+        assert app.focused.id == 'first-button'
+
+        # Navigate further
+        await pilot.press('tab', 'tab')
+        await pilot.pause()
+
+        assert app.focused.id == 'third-button'
+
+
+@pytest.mark.asyncio
+async def test_screen_switching():
+    """Test screen navigation."""
+    app = MyApp()
+
+    async with app.run_test() as pilot:
+        # Initial screen
+        assert app.screen.name == 'main'
+
+        # Navigate to settings
+        app.push_screen('settings')
+        await pilot.pause()
+
+        assert app.screen.name == 'settings'
+
+        # Go back
+        app.pop_screen()
+        await pilot.pause()
+
+        assert app.screen.name == 'main'
+```
+
+### Snapshot Testing (Optional)
+
+**Purpose:** Visual regression testing through SVG screenshots.
+
+**Basic Usage:**
+```python
+async def test_ui_appearance(snap_compare):
+    """Test that UI matches expected appearance."""
+    assert await snap_compare('path/to/app.py')
+```
+
+**Advanced Snapshot Testing:**
+```python
+async def test_after_interaction(snap_compare):
+    """Test UI appearance after user interaction."""
+    assert await snap_compare(
+        'path/to/app.py',
+        press=['tab', 'enter'],  # Simulate keypresses
+        terminal_size=(100, 30),  # Custom size
+    )
+```
+
+**Updating Snapshots:**
+```bash
+# Only update after visually confirming output is correct!
+pytest --snapshot-update
 ```
 
 ### Testing Best Practices
@@ -633,6 +948,51 @@ assert len(buttons) == 3
 # Check widget state
 assert widget.has_class('active')
 assert widget.disabled is False
+```
+
+**3. Test Reactive Behavior:**
+```python
+async def test_reactive_updates():
+    app = MyApp()
+
+    async with app.run_test() as pilot:
+        widget = app.query_one(Counter)
+
+        # Trigger reactive change
+        widget.count = 5
+        await pilot.pause()
+
+        # Verify render update
+        assert 'Count: 5' in str(widget.render())
+```
+
+**4. Test Custom Messages:**
+```python
+async def test_custom_message():
+    app = MyApp()
+
+    async with app.run_test() as pilot:
+        # Post custom message
+        app.post_message(CustomEvent(data='test'))
+        await pilot.pause()
+
+        # Verify handler was called
+        assert app.custom_event_handled is True
+```
+
+**5. Test with Different Terminal Sizes:**
+```python
+@pytest.mark.asyncio
+async def test_responsive_layout():
+    app = MyApp()
+
+    # Test small screen
+    async with app.run_test(size=(40, 20)) as pilot:
+        assert app.query_one('#sidebar').has_class('compact')
+
+    # Test large screen
+    async with app.run_test(size=(120, 40)) as pilot:
+        assert not app.query_one('#sidebar').has_class('compact')
 ```
 
 ---
@@ -711,6 +1071,96 @@ def compose(self) -> ComposeResult:
 }
 ```
 
+#### 5. Leverage Container Widgets
+
+Pre-built containers come styled with FR units, eliminating redundant CSS.
+
+```python
+from textual.containers import Vertical, Horizontal
+
+
+def compose(self) -> ComposeResult:
+    with Vertical():  # Automatically stacks children vertically
+        yield Widget1()
+        yield Widget2()
+
+    with Horizontal():  # Automatically arranges children horizontally
+        yield Widget3()
+        yield Widget4()
+```
+
+### Layout Patterns
+
+#### Centering UI Elements
+
+**Single Widget:**
+```css
+Screen {
+    align: center middle;
+}
+
+#widget {
+    width: auto;
+    height: auto;
+}
+```
+
+**Multi-line Text:**
+```css
+#widget {
+    width: 40;
+    text-align: center;           /* Center each line */
+    content-align: center middle; /* Center content block */
+}
+```
+
+**Multiple Independent Centered Widgets:**
+```python
+from textual.containers import Center
+
+
+def compose(self) -> ComposeResult:
+    with Center():
+        yield Widget1()
+    with Center():
+        yield Widget2()
+```
+
+#### Grid Layout
+
+```css
+#container {
+    layout: grid;
+    grid-size: 3 2;           /* 3 columns, 2 rows */
+    grid-columns: 1fr 2fr 1fr;
+    grid-rows: auto auto;
+    grid-gutter: 1 2;         /* vertical horizontal spacing */
+}
+
+#wide-widget {
+    column-span: 2;           /* Span multiple columns */
+}
+
+#tall-widget {
+    row-span: 2;              /* Span multiple rows */
+}
+```
+
+**Example:**
+```python
+from textual.containers import Grid
+
+
+def compose(self) -> ComposeResult:
+    with Grid():
+        yield Widget1()  # Column 0, Row 0
+        yield Widget2()  # Column 1, Row 0
+        yield Widget3()  # Column 2, Row 0
+        yield Widget4()  # Column 0, Row 1
+        yield Widget5()  # Column 1, Row 1
+        yield Widget6()  # Column 2, Row 1
+```
+
 ### Theme System & Colors
 
 #### 11 Base Colors Generate Complete Palette
@@ -768,10 +1218,17 @@ Each color gets 3 light + 3 dark variants:
 
 Modern terminals support hardware acceleration - smooth performance is achievable.
 
-#### 2. Use Immutable Objects
+#### 2. Eliminate Flicker
+
+- Overwrite content rather than clear and redraw
+- Write updates in single operations
+- Textual uses Synchronized Output protocol automatically
+
+#### 3. Use Immutable Objects
 
 ```python
 from dataclasses import dataclass
+from typing import NamedTuple
 
 
 # Immutable data structures
@@ -782,11 +1239,29 @@ class UserData:
     email: str
 
 
+class Point(NamedTuple):
+    x: int
+    y: int
+
+
 # Easier to reason about, cache, and test
 # Reduces side-effects in layout calculations
 ```
 
-#### 3. Leverage Static Widget
+#### 4. Cache Aggressively
+
+```python
+from functools import lru_cache
+
+
+@lru_cache(maxsize=1000)
+def calculate_layout(width: int, height: int) -> Layout:
+    """Expensive calculation - cache results."""
+    # ... complex layout logic
+    return layout
+```
+
+#### 5. Leverage Static Widget
 
 ```python
 from textual.widgets import Static
@@ -797,6 +1272,87 @@ class StatusDisplay(Static):
     def update_status(self, message: str) -> None:
         # Only updates when content changes
         self.update(message)
+```
+
+### Accessibility Features
+
+**Built-in Accessibility:**
+- Screen reader integration
+- Monochrome mode
+- High-contrast themes
+- Color-blind friendly themes
+- Full keyboard navigation support
+
+**Keyboard Navigation Best Practices:**
+```python
+class MyWidget(Widget):
+    can_focus = True
+
+    BINDINGS = [
+        ('enter', 'select', 'Select item'),
+        ('space', 'toggle', 'Toggle'),
+        ('escape', 'cancel', 'Cancel'),
+        ('?', 'help', 'Show help'),
+    ]
+
+    def action_select(self) -> None:
+        """Handle selection."""
+        pass
+```
+
+**Focus Management:**
+```python
+# Make widget focusable
+widget.can_focus = True
+
+# Programmatic focus
+widget.focus()
+
+# Focus next/previous
+self.focus_next()
+self.focus_previous()
+
+# Check focus state
+if self.has_focus:
+    # Widget is focused
+    pass
+```
+
+### Responsive Design Patterns
+
+**Terminal Size Adaptation:**
+```python
+from textual import events
+
+
+class ResponsiveWidget(Widget):
+    def on_resize(self, event: events.Resize) -> None:
+        """Adjust layout based on terminal size."""
+        if event.size.width < 80:
+            self.add_class('compact')
+        else:
+            self.remove_class('compact')
+```
+
+**CSS for Different Modes:**
+```css
+/* Base styles */
+#sidebar {
+    width: 30;
+}
+
+#content {
+    padding: 2;
+}
+
+/* Compact mode for smaller terminals */
+.compact #sidebar {
+    width: 20;
+}
+
+.compact #content {
+    padding: 1;
+}
 ```
 
 ---
@@ -863,7 +1419,51 @@ def on_mount(self):
     self.count = 10  # Safe to trigger watchers now
 ```
 
-#### 4. Blocking the Event Loop
+#### 4. CSS Specificity Confusion
+
+```css
+/* Specificity: ID (100) > Class (10) > Type (1) */
+Button { background: red; }        /* Specificity: 1 */
+.primary { background: blue; }     /* Specificity: 10 */
+#submit { background: green; }     /* Specificity: 100 */
+
+/* #submit wins even if Button rule comes after */
+```
+
+**Solution:** Understand specificity or use `!important` sparingly.
+
+#### 5. Forgetting to Yield in compose()
+
+```python
+# WRONG
+def compose(self) -> ComposeResult:
+    return [Header(), Footer()]  # Don't return a list!
+
+
+# RIGHT
+def compose(self) -> ComposeResult:
+    yield Header()
+    yield Footer()
+```
+
+#### 6. Not Handling Widget Removal Properly
+
+```python
+# WRONG
+def remove_widget(self):
+    widget = self.query_one('#my-widget')
+    widget.remove()
+    widget.update('text')  # Widget already removed - error!
+
+
+# RIGHT
+async def remove_widget(self):
+    widget = self.query_one('#my-widget')
+    await widget.remove()  # Wait for removal to complete
+    # Don't use widget after this point
+```
+
+#### 7. Blocking the Event Loop
 
 ```python
 # WRONG - blocks UI
@@ -881,6 +1481,109 @@ async def on_button_pressed(self):
     # Use async HTTP library
     response = await httpx.get('https://api.example.com')
     self.display_result(response.json())
+```
+
+#### 8. Emoji and Unicode Issues
+
+- Emoji support varies across terminals
+- Unicode versions differ
+- Multi-codepoint characters (like flags) render unpredictably
+- Width calculations can be incorrect
+
+**Best Practice:** Stick to Unicode 9.0 for maximum compatibility, or test thoroughly on target terminals.
+
+### Anti-Patterns to Avoid
+
+#### 1. Excessive Nesting
+
+```python
+# AVOID - too deep
+def compose(self):
+    with Container():
+        with Container():
+            with Container():
+                with Container():
+                    yield Widget()  # 4 levels deep!
+
+
+# BETTER - flatten structure
+def compose(self):
+    with Container():
+        yield Widget()
+```
+
+#### 2. Manual Refresh Calls
+
+```python
+# AVOID - unnecessary with reactive
+def update_status(self, value):
+    self.status_text = value
+    self.refresh()  # Not needed!
+
+
+# BETTER - use reactive
+class MyWidget(Widget):
+    status_text = reactive('')  # Auto-refreshes on change
+
+    def update_status(self, value):
+        self.status_text = value  # Automatic refresh
+```
+
+#### 3. Direct Child Widget Manipulation
+
+```python
+# AVOID - breaks encapsulation
+def parent_method(self):
+    child = self.query_one(ChildWidget)
+    child.internal_state = 'modified'  # Don't reach into child internals!
+
+
+# BETTER - use public API
+def parent_method(self):
+    child = self.query_one(ChildWidget)
+    child.update_value('new')  # Use public method
+
+
+# OR use messages
+def parent_method(self):
+    self.post_message(UpdateChild(value='new'))
+```
+
+#### 4. Hardcoded Colors
+
+```css
+/* AVOID - not themeable */
+#header {
+    background: #3498db;
+    color: white;
+}
+
+/* BETTER - use theme variables */
+#header {
+    background: $primary;
+    color: $text;
+}
+```
+
+#### 5. Ignoring Widget Lifecycle
+
+```python
+# AVOID - setup too early
+class MyWidget(Widget):
+    def __init__(self):
+        super().__init__()
+        self.api_connection = connect_to_api()  # Widget not mounted yet!
+
+
+# BETTER - use lifecycle methods
+class MyWidget(Widget):
+    def on_mount(self):
+        """Called after widget is mounted."""
+        self.api_connection = connect_to_api()
+
+    async def on_unmount(self):
+        """Called before widget is removed."""
+        await self.api_connection.close()
 ```
 
 ### Debugging Strategies
@@ -908,6 +1611,11 @@ def on_button_pressed(self):
     log(locals())  # Log all local variables
 ```
 
+**Console Options:**
+- `-v` - increase verbosity (show events)
+- `-x EVENT` - exclude specific message types
+- `--port 7777` - custom port
+
 #### 2. Visual Debugging with Borders
 
 ```css
@@ -922,9 +1630,197 @@ def on_button_pressed(self):
 }
 ```
 
+#### 3. Screenshots for Analysis
+
+```bash
+# Capture screenshot after 5 seconds
+textual run --screenshot 5 my_app.py
+
+# Or press Ctrl+S in dev mode for manual capture
+```
+
+#### 4. Live CSS Editing
+
+```bash
+# Dev mode with auto-reload
+textual run --dev my_app.py
+
+# Edit .tcss files and see changes immediately
+```
+
+#### 5. Widget Tree Inspection
+
+```python
+from textual import log
+
+
+def on_key(self, event):
+    if event.key == 'd':  # Press 'd' for debug
+        # Log entire widget tree
+        log(self.tree)
+
+        # Log specific queries
+        log('All buttons:', self.query('Button'))
+        log('Focused widget:', self.focused)
+```
+
+#### 6. Breakpoint Debugging
+
+```python
+async def on_button_pressed(self):
+    breakpoint()  # Python debugger
+    # Use pdb commands: n (next), s (step), c (continue)
+    await self.some_action()
+```
+
 ---
 
 ## Architectural Patterns
+
+### Simple vs Complex App Patterns
+
+#### Simple App Pattern
+
+Best for:
+- Prototyping or proof-of-concept
+- Single-purpose tools (< 500 lines)
+- No complex state management
+- Limited user interaction flows
+
+**Example:**
+```python
+# simple_app.py
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Button, Static
+
+
+class SimpleApp(App):
+    """A simple single-file application."""
+
+    CSS = """
+    Screen {
+        align: center middle;
+    }
+
+    #counter {
+        margin: 1;
+        padding: 1;
+        border: solid green;
+    }
+
+    Button {
+        margin: 1;
+    }
+    """
+
+    counter = 0
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static(f'Count: {self.counter}', id='counter')
+        yield Button('Increment', id='inc')
+        yield Button('Decrement', id='dec')
+        yield Footer()
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == 'inc':
+            self.counter += 1
+        elif event.button.id == 'dec':
+            self.counter -= 1
+
+        self.query_one('#counter', Static).update(f'Count: {self.counter}')
+
+
+if __name__ == '__main__':
+    SimpleApp().run()
+```
+
+#### Complex App Pattern
+
+Best for:
+- Production applications
+- Multiple screens/views
+- External API integration
+- Team collaboration
+- Long-term maintenance
+
+**Structure:**
+```python
+# app.py
+from textual.app import App, ComposeResult
+from .screens.main import MainScreen
+from .screens.settings import SettingsScreen
+from .screens.help import HelpScreen
+
+
+class ComplexApp(App):
+    """Production-ready multi-screen application."""
+
+    CSS_PATH = 'app.tcss'
+
+    SCREENS = {
+        'main': MainScreen,
+        'settings': SettingsScreen,
+        'help': HelpScreen,
+    }
+
+    MODES = {
+        'default': 'main',
+        'config': 'settings',
+    }
+
+    BINDINGS = [
+        ('ctrl+s', "switch_mode('config')", 'Settings'),
+        ('ctrl+h', "push_screen('help')", 'Help'),
+        ('ctrl+q', 'quit', 'Quit'),
+    ]
+
+    def on_mount(self) -> None:
+        self.push_screen('main')
+
+
+# screens/main.py
+from textual.screen import Screen
+from textual.widgets import Header, Footer
+from ..widgets.content import ContentPanel
+from ..widgets.sidebar import Sidebar
+
+
+class MainScreen(Screen):
+    CSS_PATH = 'screens/main.tcss'
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        with Horizontal():
+            yield Sidebar()
+            yield ContentPanel()
+        yield Footer()
+
+
+# widgets/content.py
+from textual.widget import Widget
+from textual.worker import work
+from ..business_logic.services import DataService
+
+
+class ContentPanel(Widget):
+    DEFAULT_CSS = """
+    ContentPanel {
+        width: 1fr;
+        padding: 1;
+    }
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.service = DataService()
+
+    @work(exclusive=True)
+    async def load_data(self) -> None:
+        """Load data asynchronously."""
+        data = await self.service.fetch_data()
+        self.display_data(data)
+```
 
 ### Composition vs Inheritance
 
@@ -957,6 +1853,69 @@ class Avatar(Static):
 
     def render(self) -> str:
         return '👤'
+
+
+class UserName(Static):
+    """Single-purpose: display name."""
+
+    pass
+
+
+class UserEmail(Static):
+    """Single-purpose: display email."""
+
+    pass
+
+
+class ActionButtons(Widget):
+    """Single-purpose: action buttons."""
+
+    def compose(self) -> ComposeResult:
+        with Horizontal():
+            yield Button('Edit')
+            yield Button('Delete')
+```
+
+#### Use Inheritance Sparingly
+
+**When to use inheritance:**
+- Implementing framework integration (extending `Widget`, `Screen`, etc.)
+- Creating widget variants with different default behavior
+- Following "is-a" relationships
+
+**When NOT to use inheritance:**
+- Deep inheritance chains (> 2 levels)
+- Just to share code (use composition or mixins instead)
+
+**Example:**
+```python
+# GOOD - Shallow inheritance for framework integration
+class CustomButton(Button):
+    """A button with custom default styling."""
+
+    DEFAULT_CSS = """
+    CustomButton {
+        background: $primary;
+        border: solid $accent;
+    }
+    """
+
+
+# AVOID - Deep inheritance chain
+class A(Widget):
+    pass
+
+
+class B(A):
+    pass
+
+
+class C(B):
+    pass
+
+
+class D(C):
+    pass  # Too deep, hard to maintain
 ```
 
 ### State Management Approaches
@@ -985,10 +1944,15 @@ class MyApp(App):
     # App-level reactive state
     user_name = reactive('')
     is_authenticated = reactive(False)
+    theme_mode = reactive('light')
 
     def login(self, username: str) -> None:
         self.user_name = username
         self.is_authenticated = True
+
+    def logout(self) -> None:
+        self.user_name = ''
+        self.is_authenticated = False
 
 
 # Any widget can access via self.app
@@ -999,7 +1963,31 @@ class UserWidget(Widget):
         return 'Please log in'
 ```
 
-#### 3. Message-Based State (Complex)
+#### 3. Data Binding (Complex)
+
+Best for: Parent-child synchronization of reactive values.
+
+```python
+class ParentWidget(Widget):
+    selected_value = reactive(0)
+
+    def compose(self) -> ComposeResult:
+        child = ChildWidget()
+        # Bind child's display to parent's selected_value
+        child.data_bind(self, display='selected_value')
+        yield child
+
+
+class ChildWidget(Widget):
+    display = reactive(0)
+
+    def render(self) -> str:
+        return f'Selected: {self.display}'
+
+    # display auto-updates when parent's selected_value changes
+```
+
+#### 4. Message-Based State (Complex)
 
 Best for: Decoupled communication between widgets, event-driven updates.
 
@@ -1023,6 +2011,13 @@ class ListenerWidget(Widget):
     def on_data_updated(self, message: DataUpdated) -> None:
         """Handle data updates from any source."""
         self.refresh_display(message.data)
+
+
+# Messages bubble up, so parent can handle child events
+class ParentWidget(Widget):
+    def on_data_updated(self, message: DataUpdated) -> None:
+        """Handle data updates from children."""
+        self.log(f'Data changed: {message.data}')
 ```
 
 ### How to Keep Code Simple and Maintainable
@@ -1032,6 +2027,25 @@ class ListenerWidget(Widget):
 Each widget should have one clear purpose.
 
 ```python
+# AVOID - widget doing too much
+class UserPanel(Widget):
+    def compose(self) -> ComposeResult:
+        # UI composition
+        pass
+
+    def fetch_user_data(self) -> dict:
+        # API calls
+        pass
+
+    def validate_input(self, data: dict) -> bool:
+        # Validation logic
+        pass
+
+    def save_to_database(self, data: dict) -> None:
+        # Database operations
+        pass
+
+
 # BETTER - separate concerns
 class UserPanel(Widget):
     """Only handles UI presentation."""
@@ -1046,11 +2060,20 @@ class UserPanel(Widget):
         yield UserForm()
         yield UserActions()
 
+    async def on_submit(self) -> None:
+        data = self.get_form_data()
+        if self.validator.validate(data):
+            await self.service.save(data)
+
 
 # business_logic/services.py
 class UserService:
     async def fetch_user(self, user_id: int) -> User:
         # API calls
+        pass
+
+    async def save(self, data: dict) -> None:
+        # Database operations
         pass
 
 
@@ -1061,7 +2084,92 @@ class UserValidator:
         pass
 ```
 
-#### 2. Use Type Hints
+#### 2. Use Actions for Common Operations
+
+```python
+class MyApp(App):
+    BINDINGS = [
+        ('ctrl+s', 'save', 'Save'),
+        ('ctrl+r', 'refresh', 'Refresh'),
+        ('ctrl+q', 'quit', 'Quit'),
+    ]
+
+    def action_save(self) -> None:
+        """Reusable save action - can be called from anywhere."""
+        self.save_data()
+
+    def action_refresh(self) -> None:
+        """Reusable refresh action."""
+        self.load_data()
+
+
+# Can call actions programmatically
+def on_button_pressed(self) -> None:
+    self.action_save()
+```
+
+#### 3. Keep CSS External
+
+```python
+# app.py - Clean Python code
+class MyApp(App):
+    CSS_PATH = "app.tcss"  # All styling in external file
+
+# app.tcss - All styling here
+Screen {
+    background: $surface;
+}
+
+Button {
+    margin: 1;
+
+    &:hover {
+        background: $accent;
+    }
+}
+```
+
+#### 4. Limit Reactive Watchers
+
+```python
+# AVOID - too many watchers
+class MyWidget(Widget):
+    value1 = reactive(0)
+    value2 = reactive(0)
+    value3 = reactive(0)
+
+    def watch_value1(self, v):
+        pass
+
+    def watch_value2(self, v):
+        pass
+
+    def watch_value3(self, v):
+        pass
+
+    # ... 10 more watchers
+
+
+# BETTER - consolidated state
+from dataclasses import dataclass
+
+
+@dataclass
+class WidgetState:
+    value1: int = 0
+    value2: int = 0
+    value3: int = 0
+
+
+class MyWidget(Widget):
+    state = reactive(WidgetState())
+
+    def watch_state(self, state: WidgetState) -> None:
+        # Single handler for all state changes
+        self.handle_state_change(state)
+```
+
+#### 5. Use Type Hints
 
 ```python
 from textual.app import App, ComposeResult
@@ -1079,6 +2187,81 @@ class MyApp(App):
 
         status: Static = self.query_one('#status', Static)
         status.update('Button was clicked')
+```
+
+#### 6. Document Complex Widgets
+
+```python
+class ComplexWidget(Widget):
+    """
+    Displays user data with real-time updates.
+
+    This widget fetches user data from the API every `refresh_interval`
+    seconds and displays it in a formatted panel.
+
+    Attributes:
+        user_id: Current user identifier being displayed
+        refresh_interval: Seconds between automatic data refreshes
+
+    Messages:
+        UserUpdated: Posted when user data is refreshed
+
+    Example:
+        >>> widget = ComplexWidget(user_id=123)
+        >>> await widget.load_user()
+    """
+
+    user_id = reactive('')
+    refresh_interval = reactive(5)
+```
+
+#### 7. Extract Reusable Components
+
+```python
+# AVOID - duplicated code
+class Screen1(Screen):
+    def compose(self) -> ComposeResult:
+        yield Header()
+        with Vertical():
+            yield Static('Title')
+            yield Button('Action')
+        yield Footer()
+
+
+class Screen2(Screen):
+    def compose(self) -> ComposeResult:
+        yield Header()
+        with Vertical():
+            yield Static('Title')
+            yield Button('Action')
+        yield Footer()
+
+
+# BETTER - reusable components
+class TitledPanel(Widget):
+    def __init__(self, title: str, action: str) -> None:
+        super().__init__()
+        self.title = title
+        self.action = action
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Static(self.title)
+            yield Button(self.action)
+
+
+class Screen1(Screen):
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield TitledPanel('Screen 1', 'Action 1')
+        yield Footer()
+
+
+class Screen2(Screen):
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield TitledPanel('Screen 2', 'Action 2')
+        yield Footer()
 ```
 
 ---

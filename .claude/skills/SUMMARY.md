@@ -558,17 +558,8 @@ Based on skill-analyzer framework:
 
 ```
 .cursorrules                           # Cursor AI context
-SKILLS_SUMMARY.md                      # This file
+.claude/skills/SUMMARY.md              # This file
 ```
-
-### Original Source Files (Optional Cleanup)
-
-```
-textual-quick-reference.md             # Source for textual skill
-textual-guide.md                       # Source for textual skill
-```
-
-**Note:** Original files can be removed as content is now in `.claude/skills/textual/`
 
 ---
 

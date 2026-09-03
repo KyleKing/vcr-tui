@@ -135,7 +135,7 @@ This skill is based on the Textual documentation and best practices as of Januar
 ### Original Source Files
 
 This skill was created from:
-- `textual-quick-reference.md` - Quick reference templates
-- `textual-guide.md` - Comprehensive framework guide
+- `quick-reference.md` - Quick reference templates
+- `guide.md` - Comprehensive framework guide
 
 These files can be updated and the skill regenerated if needed.
