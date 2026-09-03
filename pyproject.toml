@@ -98,7 +98,7 @@ ignore = [
   'typing-only-third-party-import', # Move third-party import `rich.console.Console` into a type-checking block (Conflicts with Beartype)
 ]
 preview = true
-select = ['E', 'F', 'I', 'UP', 'B', 'SIM']
+select = ['ALL']
 unfixable = [
   'commented-out-code', # Commented out code
 ]
