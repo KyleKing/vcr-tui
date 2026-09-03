@@ -67,8 +67,9 @@ handful of widget edge cases, none of which is worth a test on its own.
   over the list, escape clears it. The YAML key viewer still has none.
 - ~~No reload~~ — done: `r` re-runs discovery and keeps the selection when
   the file survives.
-- README documents `j`/`k` navigation; verify the widgets actually implement
-  it and keep the docs in sync.
+- ~~README documents `j`/`k` navigation~~ — verified: `j`/`k` and the arrow
+  keys both move the highlight in the file list and the key viewer, and
+  `tab`/`shift+tab` cycle panes.
 
 ## 4. Housekeeping
 
