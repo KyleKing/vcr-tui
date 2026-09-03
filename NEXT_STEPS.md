@@ -2,7 +2,7 @@
 
 A prioritized roadmap written from the actual state of the tree: ~950 lines of
 working code in `src/vcr_tui` (CLI + Textual TUI for previewing VCR cassettes),
-one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 144 passing
+one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 156 passing
 tests at 95% statement coverage.
 
 ## 0. Template adoption follow-ups
@@ -26,7 +26,7 @@ Still open from that migration:
 
 ## 1. Tests
 
-Done. The suite is 144 tests at 95% statement coverage, and every gap this
+Done. The suite is 156 tests at 95% statement coverage, and every gap this
 section listed is closed: `preview/engine.py`, `config/`, the CLI through
 `click.testing.CliRunner`, and the UI through both `pytest-textual-snapshot`
 golden frames and `run_test()` pilot tests. What is left uncovered is the
@@ -84,3 +84,46 @@ handful of widget edge cases, none of which is worth a test on its own.
   moved to `.claude/skills/SUMMARY.md`; `gemini-deep-research.txt` went, as
   the pipeline it recommends is what `preview/` implements. `.freshen.md`
   stays: it is a running session log rather than a duplicate doc.
+
+## 5. Upstream: Textual spins at 100% CPU when its terminal hangs up
+
+Not a bug in this project's code, and worth carrying here because it is how a
+`vcr-tui` process left running unattended burns a core for hours. Nineteen
+orphaned `vcr-tui` processes were found pinned at 40-49% CPU each, some ~10
+hours old, after the harness that launched them went away without killing
+them.
+
+Reproduced on textual 7.3.0, python 3.11:
+
+```python
+import os, pty, subprocess, time
+
+master, slave = pty.openpty()
+p = subprocess.Popen(
+    [".venv/bin/vcr-tui", "fixtures/cassettes"],
+    stdin=slave, stdout=slave, stderr=slave, start_new_session=True,
+)
+os.close(slave)
+print(p.pid)
+time.sleep(4)
+os._exit(0)  # the kernel closes the master, as a crashed parent would
+```
+
+The child sits at 0.0% CPU while the master is open and jumps to 99.4% the
+moment the parent exits, reparented to init. `sample` puts every tick in
+`select_select_impl` and `os_read` on the input thread.
+
+The loop is `LinuxDriver.run_input_thread` in
+`textual/drivers/linux_driver.py`. Once the master closes, `selector.select`
+returns the fd readable forever, `os.read` returns `b""`, the empty read
+breaks the inner loop, and `while not self.exit_event.is_set()` re-enters
+`select` with no sleep and nothing to wait for. The `# This can occur if the
+stdin is piped` comment beside the break shows EOF was anticipated, and the
+handling stops at leaving the byte loop rather than ending the app. Same class
+as [ranger#1367](https://github.com/ranger/ranger/issues/1367).
+
+[TEXTUAL_ISSUE_DRAFT.md](TEXTUAL_ISSUE_DRAFT.md) holds the writeup ready to
+file against [Textualize/textual](https://github.com/Textualize/textual). No
+issue has been opened. Nothing is worked around in this repo, because a driver
+subclass here would hide an upstream defect every other Textual app still
+has.
