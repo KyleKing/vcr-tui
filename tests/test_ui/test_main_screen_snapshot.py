@@ -15,10 +15,12 @@ from pathlib import Path
 from typing import Any
 
 from rich.syntax import Syntax
+from textual.pilot import Pilot
 
 from vcr_tui.app import VCRTUIApp
 from vcr_tui.config.defaults import get_default_config
-from vcr_tui.ui.widgets import MetadataBarWidget, PreviewPanelWidget
+from vcr_tui.ui.screens.main_screen import MainScreen
+from vcr_tui.ui.widgets import FileListWidget, MetadataBarWidget, PreviewPanelWidget
 
 CASSETTES = Path(__file__).parent.parent.parent / 'fixtures' / 'cassettes'
 
@@ -27,9 +29,19 @@ def _app(directory: Path = CASSETTES) -> VCRTUIApp:
     return VCRTUIApp(directory, get_default_config())
 
 
+async def _populated_app(pilot: Pilot) -> None:
+    """Wait for the background file discovery worker to reach the UI."""
+    await pilot.app.workers.wait_for_complete()
+    await pilot.pause()
+    screen = pilot.app.screen
+    assert isinstance(screen, MainScreen)
+    file_list = screen.query_one('#file-list', FileListWidget)
+    assert file_list.option_count > 0
+
+
 def test_main_screen_initial(snap_compare: Any) -> None:
     """Main screen on mount: file list populated, first file's keys shown."""
-    assert snap_compare(_app())
+    assert snap_compare(_app(), run_before=_populated_app)
 
 
 async def test_main_screen_preview_response_body() -> None:

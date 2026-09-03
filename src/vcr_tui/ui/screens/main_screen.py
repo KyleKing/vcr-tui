@@ -1,8 +1,10 @@
 from pathlib import Path
 
+from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
+from textual.message import Message
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
@@ -18,12 +20,19 @@ from vcr_tui.ui.widgets import (
 )
 
 
+class FilesDiscovered(Message):
+    def __init__(self, files: list[Path]) -> None:
+        self.files = files
+        super().__init__()
+
+
 class MainScreen(Screen[None]):
     # NOTE: Screen already binds tab/shift+tab to app.focus_next/app.focus_previous;
     # do not override them with a bare 'focus_next' action — that action does not
     # exist on Screen and Tab silently stops moving focus.
     BINDINGS = [
         Binding('q', 'quit', 'Quit'),
+        Binding('r', 'reload_files', 'Reload files'),
     ]
 
     def __init__(
@@ -50,17 +59,31 @@ class MainScreen(Screen[None]):
         yield Footer()
 
     def on_mount(self) -> None:
-        self._load_files()
+        self._discover_files()
         self.query_one('#file-list').focus()
 
-    def _load_files(self) -> None:
+    def action_reload_files(self) -> None:
+        self._discover_files()
+
+    @work(thread=True, exclusive=True)
+    def _discover_files(self) -> None:
         files = self.engine.discover_files(self.directory, self.channel)
+        self.post_message(FilesDiscovered(files))
+
+    def on_files_discovered(self, event: FilesDiscovered) -> None:
+        files = event.files
         file_list = self.query_one('#file-list', FileListWidget)
         file_list.set_files(files)
 
-        if files:
-            self._current_file = files[0]
-            self._load_keys(files[0])
+        if not files:
+            self._current_file = None
+            return
+
+        current = self._current_file
+        selected = current if current is not None and current in files else files[0]
+        self._current_file = selected
+        file_list.highlighted = files.index(selected)
+        self._load_keys(selected)
 
     def _load_keys(self, file_path: Path) -> None:
         keys = self.engine.get_keys(file_path)
