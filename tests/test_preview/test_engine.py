@@ -97,6 +97,41 @@ class TestDiscoverFiles:
         f.write_text('interactions: []\n')
         assert engine.discover_files(tmp_path) == [f]
 
+    def test_tree_walked_once_for_overlapping_patterns(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Regression: discover_files used to rglob once per pattern, walking the
+        # whole tree N times for N patterns; now the tree is walked once and each
+        # path is matched against every pattern.
+        config = Config(
+            channels=(
+                Channel(
+                    name='overlap',
+                    glob_patterns=('**/*.yaml', '**/cassettes/*.yaml'),
+                    extraction_rules=(ExtractionRule(path='.', formatter='yaml'),),
+                ),
+            )
+        )
+        cassette = tmp_path / 'cassettes' / 'example_api.yaml'
+        cassette.parent.mkdir(parents=True)
+        cassette.write_text('interactions: []\n')
+        plain = tmp_path / 'plain.yaml'
+        plain.write_text('a: 1\n')
+
+        calls: list[Path] = []
+        original = Path.rglob
+
+        def counting_rglob(self: Path, pattern: str) -> Any:
+            calls.append(self)
+            return original(self, pattern)
+
+        monkeypatch.setattr(Path, 'rglob', counting_rglob)
+
+        found = PreviewEngine(config).discover_files(tmp_path, channel_name='overlap')
+
+        assert {f.name for f in found} == {'example_api.yaml', 'plain.yaml'}
+        assert calls == [tmp_path]
+
 
 class TestPreviewKey:
     @pytest.mark.parametrize(

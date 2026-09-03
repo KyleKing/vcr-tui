@@ -20,10 +20,15 @@ class PreviewEngine:
             return []
 
         files: list[Path] = []
-        for pattern in channel.glob_patterns:
-            for path in directory.rglob('*'):
-                if path.is_file() and self._should_include(path, directory, pattern):
+        seen: set[Path] = set()
+        for path in directory.rglob('*'):
+            if not (path.is_file() and path not in seen):
+                continue
+            for pattern in channel.glob_patterns:
+                if self._should_include(path, directory, pattern):
+                    seen.add(path)
                     files.append(path)
+                    break
 
         return sorted(set(files), key=lambda p: p.name)
 
