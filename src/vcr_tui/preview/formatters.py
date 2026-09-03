@@ -39,7 +39,7 @@ def _format_json(content: Any) -> str:
 
 def _format_yaml(content: Any) -> str:
     stream = StringIO()
-    _yaml.dump(content, stream)
+    _yaml.dump(_expand_json_strings(content), stream)
     text = stream.getvalue().rstrip()
     # A bare scalar (str/int/...) is emitted with a trailing "..." document-end
     # marker on its own line, which is noise in a preview; drop it.
@@ -73,3 +73,24 @@ def _format_toml(content: Any) -> str:
         # tomli_w only writes tables; fall back to a plain representation for
         # anything else (scalars, lists of scalars, mixed data).
         return str(content)
+
+
+def _expand_json_strings(data: Any) -> Any:
+    """Copy ``data`` with every JSON-object/array string parsed into structure.
+
+    Strings that are not JSON, are invalid JSON, or parse to a bare scalar
+    (number, boolean, null) are kept exactly as they are.
+    """
+    if isinstance(data, dict):
+        return {key: _expand_json_strings(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [_expand_json_strings(item) for item in data]
+    if isinstance(data, str):
+        try:
+            parsed = json.loads(data)
+        except json.JSONDecodeError:
+            return data
+        if isinstance(parsed, (dict, list)):
+            return _expand_json_strings(parsed)
+        return data
+    return data

@@ -51,10 +51,12 @@ async def test_main_screen_preview_response_body() -> None:
     module docstring); assert on the preview panel's rendered Syntax object.
     """
     app = _app()
-    # Key index 13 in the fixture is interactions[0].response.body.string.
     async with app.run_test() as pilot:
-        # Focus order: file-list -> yaml-viewer (filter-input is third).
-        await pilot.press('tab', *['j'] * 13, 'enter')
+        # Focus order: file-list -> yaml-viewer (filter-input is third). The
+        # key list starts with nothing highlighted, so the first j selects
+        # index 0 and n presses land on index n-1: 14 reaches key 13,
+        # interactions[0].response.body.string.
+        await pilot.press('tab', *['j'] * 14, 'enter')
 
         panel = app.screen.query_one('#preview-panel', PreviewPanelWidget)
         content = panel.content
@@ -71,9 +73,8 @@ async def test_main_screen_metadata_bar_populated() -> None:
     """
     app = _app()
     async with app.run_test() as pilot:
-        # interactions[1].request.body.string (key index 35): metadata comes from
-        # the second interaction (POST https://api.example.com/users).
-        # Focus order: file-list -> yaml-viewer (filter-input is third).
+        # 35 presses reach key 34, interactions[1].response.body.string, whose
+        # metadata comes from the second interaction (POST /users).
         await pilot.press('tab', *['j'] * 35, 'enter')
 
         bar = app.screen.query_one('#metadata-bar', MetadataBarWidget)

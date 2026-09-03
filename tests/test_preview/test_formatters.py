@@ -40,6 +40,48 @@ class TestFormatYaml:
         # No document-end marker for a bare scalar.
         assert format_content('hello', 'yaml') == 'hello'
 
+    def test_embedded_json_string_expands_into_nested_keys(self):
+        result = format_content({'body': EMBEDDED_JSON}, 'yaml')
+        assert 'name: John Doe' in result
+        assert 'email: john@example.com' in result
+        assert '\\' not in result
+
+    def test_embedded_json_array_string_expands(self):
+        result = format_content({'items': '[1, 2, 3]'}, 'yaml')
+        assert result == 'items:\n- 1\n- 2\n- 3'
+
+    def test_nested_embedded_json_string_expands_recursively(self):
+        inner = '{"a": 1}'
+        outer = json.dumps({'b': inner})
+        result = format_content({'payload': outer}, 'yaml')
+        assert 'payload:' in result
+        assert 'b:' in result
+        assert 'a: 1' in result
+
+    def test_plain_string_value_survives_untouched(self):
+        result = format_content({'uri': 'https://api.example.com/users/1'}, 'yaml')
+        assert 'uri: https://api.example.com/users/1' in result
+
+    def test_invalid_and_scalar_json_strings_stay_strings(self):
+        result = format_content(
+            {
+                'not_json': '{oops',
+                'number_string': '42',
+                'bool_string': 'true',
+                'null_string': 'null',
+            },
+            'yaml',
+        )
+        assert "not_json: '{oops'" in result
+        assert "number_string: '42'" in result
+        assert "bool_string: 'true'" in result
+        assert "null_string: 'null'" in result
+
+    def test_input_is_not_mutated(self):
+        data = {'body': EMBEDDED_JSON}
+        format_content(data, 'yaml')
+        assert data['body'] == EMBEDDED_JSON
+
 
 class TestFormatText:
     def test_plain_string_unchanged(self):
@@ -109,8 +151,16 @@ class TestFormatContentWithCassetteData:
         version = get_value_at_path(cassette_data, 'version')
         assert format_content(version, 'toml') == '1'
 
-    def test_response_body_json_round_trip(self, cassette_data):
+    def test_response_body_key_renders_json(self, cassette_data):
         body = get_value_at_path(cassette_data, 'interactions[0].response.body.string')
         parsed = json.loads(format_content(body, 'json'))
         assert parsed['id'] == 1
         assert parsed['name'] == 'John Doe'
+
+    def test_yaml_key_path_expands_embedded_json(self, cassette_data):
+        # Regression: with a yaml-formatted rule (e.g. the 'yaml' channel's '.'
+        # rule), the body string used to stay an escaped one-line string.
+        body = get_value_at_path(cassette_data, 'interactions[0].response.body.string')
+        result = format_content(body, 'yaml')
+        assert 'name: John Doe' in result
+        assert 'email: john@example.com' in result
