@@ -1,6 +1,6 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Widget rendering the formatted preview with syntax highlighting."""
-
-from typing import Any
 
 from rich.syntax import Syntax
 from textual.widgets import Static
@@ -19,10 +19,7 @@ LEXER_MAP = {
 class PreviewPanelWidget(Static):
     """Static panel showing a Syntax-rendered preview."""
 
-    def __init__(self, **kwargs: Any) -> None:
-        """Start with no preview loaded."""
-        super().__init__(**kwargs)
-        self._result: PreviewResult | None = None
+    _result: PreviewResult | None = None
 
     def set_preview(self, result: PreviewResult) -> None:
         """Render a preview result with the lexer matching its formatter."""

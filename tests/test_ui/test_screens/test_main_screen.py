@@ -163,7 +163,8 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
     directory = tmp_path / 'tree'
     (directory / 'cassettes').mkdir(parents=True)
     (directory / 'cassettes' / 'example_api.yaml').write_text(
-        'interactions: []\n', encoding='utf-8'
+        'interactions: []\n',
+        encoding='utf-8',
     )
     standalone = directory / 'standalone_doc.yaml'
     standalone.write_text('key: value\n', encoding='utf-8')

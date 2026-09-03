@@ -1,5 +1,9 @@
 """Tests for preview/engine.py."""
 
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
+
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +30,12 @@ def engine() -> PreviewEngine:
 
 @pytest.fixture
 def tree(tmp_path: Path) -> Path:
-    """A tmp_path tree with cassettes in and out of excluded dirs."""
+    """A tmp_path tree with cassettes in and out of excluded dirs.
+
+    Returns:
+        Path: The temporary root directory of the populated tree.
+
+    """
     files = [
         'proj/cassettes/a.yaml',
         'proj/cassettes/nested/b.yml',
@@ -45,7 +54,9 @@ def tree(tmp_path: Path) -> Path:
 
 class TestDiscoverFiles:
     def test_finds_yaml_directly_in_start_directory(
-        self, engine: PreviewEngine, tmp_path: Path
+        self,
+        engine: PreviewEngine,
+        tmp_path: Path,
     ) -> None:
         # Regression: Path('a.yaml').match('**/*.yaml') is False, so with the
         # broad 'yaml' channel a file at the top of the start directory was missed.
@@ -54,7 +65,9 @@ class TestDiscoverFiles:
         assert engine.discover_files(tmp_path, 'yaml') == [top]
 
     def test_finds_vcr_cassette_directly_under_start(
-        self, engine: PreviewEngine, tmp_path: Path
+        self,
+        engine: PreviewEngine,
+        tmp_path: Path,
     ) -> None:
         # Regression: pathlib treats '**' as a single '*' level, so a cassette
         # directly under <start>/cassettes/ did not match '**/cassettes/*.yaml'.
@@ -69,7 +82,10 @@ class TestDiscoverFiles:
 
     @pytest.mark.parametrize('excluded', sorted(EXCLUDED_DIRS))
     def test_excluded_dirs_are_skipped(
-        self, excluded: str, engine: PreviewEngine, tmp_path: Path
+        self,
+        excluded: str,
+        engine: PreviewEngine,
+        tmp_path: Path,
     ) -> None:
         included = tmp_path / 'proj' / 'cassettes' / 'in.yaml'
         excluded_file = tmp_path / excluded / 'cassettes' / 'out.yaml'
@@ -87,7 +103,9 @@ class TestDiscoverFiles:
         assert {f.name for f in found} == {'a.yaml', 'b.yml', 'c.yaml'}
 
     def test_top_level_cassettes_dir_is_not_matched(
-        self, engine: PreviewEngine, tmp_path: Path
+        self,
+        engine: PreviewEngine,
+        tmp_path: Path,
     ) -> None:
         # pathlib's match() treats '**' as a single '*' level, so without the
         # top-level fallback in _should_include a cassette directly under
@@ -98,7 +116,9 @@ class TestDiscoverFiles:
         assert engine.discover_files(tmp_path) == [f]
 
     def test_tree_walked_once_for_overlapping_patterns(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         # Regression: discover_files used to rglob once per pattern, walking the
         # whole tree N times for N patterns; now the tree is walked once and each
@@ -110,7 +130,7 @@ class TestDiscoverFiles:
                     glob_patterns=('**/*.yaml', '**/cassettes/*.yaml'),
                     extraction_rules=(ExtractionRule(path='.', formatter='yaml'),),
                 ),
-            )
+            ),
         )
         cassette = tmp_path / 'cassettes' / 'example_api.yaml'
         cassette.parent.mkdir(parents=True)
@@ -119,9 +139,9 @@ class TestDiscoverFiles:
         plain.write_text('a: 1\n')
 
         calls: list[Path] = []
-        original = Path.rglob
+        original: Callable[..., Iterator[Path]] = Path.rglob
 
-        def counting_rglob(self: Path, pattern: str) -> Any:
+        def counting_rglob(self: Path, pattern: str) -> Iterator[Path]:  # noqa: ANN202
             calls.append(self)
             return original(self, pattern)
 
@@ -158,7 +178,9 @@ class TestPreviewKey:
         assert snippet in result.content
 
     def test_unmatched_key_falls_back_to_yaml(
-        self, engine: PreviewEngine, cassette_path: Path
+        self,
+        engine: PreviewEngine,
+        cassette_path: Path,
     ) -> None:
         result = engine.preview_key(cassette_path, 'version')
         assert result.formatter == 'yaml'
@@ -166,7 +188,9 @@ class TestPreviewKey:
         assert result.content == '1'
 
     def test_default_channel_metadata_is_extracted(
-        self, engine: PreviewEngine, cassette_path: Path
+        self,
+        engine: PreviewEngine,
+        cassette_path: Path,
     ) -> None:
         result = engine.preview_key(cassette_path, 'interactions[0].response.body.string')
         assert result.metadata['status.code'] == 200
@@ -182,14 +206,20 @@ class TestPreviewKey:
         ],
     )
     def test_rule_matches_only_paths_without_leading_dot(
-        self, engine: PreviewEngine, cassette_path: Path, key_path: str, expected: str
+        self,
+        engine: PreviewEngine,
+        cassette_path: Path,
+        key_path: str,
+        expected: str,
     ) -> None:
         # Pins current behaviour: rules only match key paths without a leading dot
         # (the shape get_yaml_keys produces).
         assert engine.preview_key(cassette_path, key_path).formatter == expected
 
     def test_yaml_rule_expands_embedded_json_strings(
-        self, cassette_path: Path, cassette_data: dict[str, Any]
+        self,
+        cassette_path: Path,
+        cassette_data: dict[str, Any],
     ) -> None:
         # Reproduction: with the default 'yaml' channel the response-body rule
         # formats as yaml, so the embedded JSON body string must still expand.
@@ -213,7 +243,9 @@ class TestPreviewFile:
         assert 'John Doe' in result.content
 
     def test_json_body_string_renders_as_nested_keys(
-        self, engine: PreviewEngine, cassette_path: Path
+        self,
+        engine: PreviewEngine,
+        cassette_path: Path,
     ) -> None:
         result = engine.preview_file(cassette_path)
         assert 'name: John Doe' in result.content
@@ -221,7 +253,9 @@ class TestPreviewFile:
         assert '\\"' not in result.content
 
     def test_plain_string_value_survives_untouched(
-        self, engine: PreviewEngine, cassette_path: Path
+        self,
+        engine: PreviewEngine,
+        cassette_path: Path,
     ) -> None:
         result = engine.preview_file(cassette_path)
         assert 'uri: https://api.example.com/users/1' in result.content
@@ -233,7 +267,7 @@ class TestPreviewFile:
 
     def test_channel_without_rules_uses_yaml(self, cassette_path: Path) -> None:
         engine = PreviewEngine(
-            Config(channels=(Channel(name='bare', glob_patterns=('**/*',), extraction_rules=()),))
+            Config(channels=(Channel(name='bare', glob_patterns=('**/*',), extraction_rules=()),)),
         )
         result = engine.preview_file(cassette_path, 'bare')
         assert result.formatter == 'yaml'
@@ -298,13 +332,16 @@ class TestMetadataExtraction:
         ],
     )
     def test_metadata_resolved_relative_to_key_parent(
-        self, tmp_path: Path, key_path: str, expected: dict[str, Any]
+        self,
+        tmp_path: Path,
+        key_path: str,
+        expected: dict[str, Any],
     ) -> None:
         data = {
             'users': [
                 {'profile': {'name': 'a', 'id': 7}},
                 {'profile': {'name': 'b', 'id': 8}},
-            ]
+            ],
         }
         f = _write_yaml(tmp_path / 'meta.yaml', data)
         result = PreviewEngine(_meta_config()).preview_key(f, key_path, 'meta')
