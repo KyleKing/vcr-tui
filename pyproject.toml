@@ -53,25 +53,6 @@ pre_bump_hooks = ["uv lock"]
 version = "0.1.0"
 version_files = ["pyproject.toml:^version", "src/vcr_tui/__init__.py:^__version"]
 
-[tool.mypy]
-check_untyped_defs = true
-disallow_any_generics = true
-enable_error_code = ["ignore-without-code", "possibly-undefined", "redundant-expr", "truthy-bool"]
-extra_checks = true
-files = ["src/vcr_tui", "tests"]
-no_implicit_reexport = true
-plugins = [
-]
-python_version = "3.11"
-show_column_numbers = true
-show_error_codes = true
-strict_equality = true
-warn_no_return = true
-warn_redundant_casts = true
-warn_unreachable = true
-warn_unused_configs = true
-warn_unused_ignores = true
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

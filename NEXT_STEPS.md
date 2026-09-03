@@ -11,11 +11,11 @@ The calcipy_template was adopted (`.copier-answers.yml`, `./run` task runner,
 mkdocs docs, pre-commit, nox, commitizen, uv build backend with `src/` layout).
 Still open from that migration:
 
-- `docs/README.md` still carries the template's placeholder text (`poetry add
-  vcr_tui`, TODO example) while root `README.md` is real — rewrite the docs
-  copy to match.
-- `pyproject.toml` carries both a `[tool.mypy]` config and the project's `ty`
-  type checker; align on one and remove the stale config.
+- ~~`docs/README.md` still carries the template's placeholder text~~ — done:
+  rewritten to describe this project (uv install, real CLI/TUI examples).
+- ~~`pyproject.toml` carries both a `[tool.mypy]` config and the project's
+  `ty` type checker~~ — done: the stale `[tool.mypy]` section was removed; ty
+  is the type gate.
 - ~~Decide whether gates run via `./run main` (calcipy tasks) or direct
   `uv run ruff/ty/pytest`~~ — decided: gates are `uv run ruff check .`,
   `uv run ty check src`, and `uv run pytest` (see AGENTS.local.md). `./run`

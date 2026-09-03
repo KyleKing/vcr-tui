@@ -2,23 +2,59 @@
 
 TUI for previewing VCR cassettes and machine-generated files
 
+`vcr-tui` is a [Textual](https://textual.textualize.io/) TUI plus a
+[Click](https://click.palletsprojects.com/) CLI for browsing and previewing VCR
+cassettes (YAML) and other machine-generated files.
+
 ## Installation
 
-1. `poetry add vcr_tui`
+Requires Python 3.11+. Install with [uv](https://docs.astral.sh/uv/):
 
-1. ...
+```sh
+uv tool install vcr-tui
+```
 
-    ```sh
-    import vcr_tui
+Within a project already managed by uv, add it as a dependency instead:
 
-    # TODO: [Replace with your example code]
-    ```
-
-1. ...
+```sh
+uv add vcr-tui
+```
 
 ## Usage
 
-<!-- TODO: [Add screenshots or terminal recording demonstrating usage] -->
+Open the TUI on a directory of cassettes:
+
+```sh
+vcr-tui path/to/cassettes
+```
+
+Inside it, `j`/`k` and the arrow keys move, `tab` cycles panes, `/` filters
+the focused pane, `c` switches channel, `r` rescans the directory, and `q`
+quits.
+
+The same directory is browsable from the shell. `files` lists what the active
+channel matches, `keys` lists the key paths inside one file, `preview` renders
+a file or a single key, and `channels` lists what is configured. `FILE` is a
+path from the current directory rather than from `DIRECTORY`:
+
+```sh
+vcr-tui path/to/cassettes files
+vcr-tui path/to/cassettes keys path/to/cassettes/example_api.yaml
+vcr-tui path/to/cassettes preview path/to/cassettes/example_api.yaml \
+  -k 'interactions[0].response.body.string'
+vcr-tui path/to/cassettes channels
+```
+
+A JSON payload stored as a YAML string is expanded in place rather than shown
+escaped, which is the reason this exists:
+
+```yaml
+response:
+  body:
+    string:
+      id: 1
+      name: John Doe
+```
 
 For more example code, see the [scripts] directory or the [tests].
 

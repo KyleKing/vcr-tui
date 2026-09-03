@@ -14,7 +14,7 @@ This file provides quick reference - see skills for detailed guidance.
 **Tech Stack:**
 - **Framework**: Textual (Python TUI framework)
 - **Testing**: pytest with async support
-- **Tools**: hk (git hooks), ruff (linting), mypy (type checking)
+- **Tools**: hk (git hooks), ruff (linting), ty (type checking)
 - **Python**: 3.11+
 
 ---
@@ -256,7 +256,7 @@ hk check
 pytest
 
 # Type check
-mypy .
+ty check src tests
 ```
 
 ### Development Mode
