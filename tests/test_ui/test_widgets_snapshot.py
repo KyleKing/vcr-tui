@@ -63,6 +63,57 @@ def test_yaml_viewer_widget(snap_compare: Any, cassette_keys: list[YAMLKey]) -> 
     assert snap_compare(_Harness(widget)())
 
 
+async def test_yaml_viewer_widget_filter_lifecycle(cassette_keys: list[YAMLKey]) -> None:
+    """Filtering narrows, a non-matching filter empties, and clearing restores all.
+
+    A filter change keeps the highlight on the same key when it stays visible.
+    """
+    from textual.app import App
+
+    class _App(App[None]):
+        def compose(self):  # noqa: ANN201
+            yield YAMLViewerWidget(id='yaml-viewer')
+
+    app = _App()
+    async with app.run_test():
+        widget = app.query_one('#yaml-viewer', YAMLViewerWidget)
+        widget.set_keys(cassette_keys)
+        total = len(cassette_keys)
+
+        widget.set_filter('body')
+        filtered = len(widget._visible_keys())
+        assert 0 < filtered < total
+
+        widget.set_filter('no-such-path-xyz')
+        assert widget._visible_keys() == []
+
+        widget.set_filter('')
+        assert widget.filter is None
+        assert len(widget._visible_keys()) == total
+
+
+async def test_yaml_viewer_widget_highlight_survives_filter_change(
+    cassette_keys: list[YAMLKey],
+) -> None:
+    from textual.app import App
+
+    class _App(App[None]):
+        def compose(self):  # noqa: ANN201
+            yield YAMLViewerWidget(id='yaml-viewer')
+
+    app = _App()
+    async with app.run_test():
+        widget = app.query_one('#yaml-viewer', YAMLViewerWidget)
+        widget.set_keys(cassette_keys)
+        body_index = next(i for i, k in enumerate(cassette_keys) if 'body' in k.path)
+        widget.highlighted = body_index
+        highlighted_path = widget.get_option_at_index(body_index).id
+
+        widget.set_filter('body')
+        assert widget.highlighted is not None
+        assert widget.get_option_at_index(widget.highlighted).id == highlighted_path
+
+
 def test_preview_panel_widget_renders_syntax_highlighted_content() -> None:
     """The preview panel formats the selected body as syntax-highlighted JSON.
 
