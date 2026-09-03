@@ -53,6 +53,7 @@ async def test_main_screen_preview_response_body() -> None:
     app = _app()
     # Key index 13 in the fixture is interactions[0].response.body.string.
     async with app.run_test() as pilot:
+        # Focus order: file-list -> yaml-viewer (filter-input is third).
         await pilot.press('tab', *['j'] * 13, 'enter')
 
         panel = app.screen.query_one('#preview-panel', PreviewPanelWidget)
@@ -72,6 +73,7 @@ async def test_main_screen_metadata_bar_populated() -> None:
     async with app.run_test() as pilot:
         # interactions[1].request.body.string (key index 35): metadata comes from
         # the second interaction (POST https://api.example.com/users).
+        # Focus order: file-list -> yaml-viewer (filter-input is third).
         await pilot.press('tab', *['j'] * 35, 'enter')
 
         bar = app.screen.query_one('#metadata-bar', MetadataBarWidget)

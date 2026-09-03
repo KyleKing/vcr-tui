@@ -6,14 +6,28 @@ Screen {
     height: 1fr;
 }
 
-#file-list {
+#sidebar {
     width: 40%;
     max-width: 30;
+}
+
+#file-list {
+    height: 1fr;
     border: solid $primary-background;
     background: $surface;
 }
 
 #file-list:focus {
+    border: solid $primary;
+}
+
+#filter-input {
+    height: 3;
+    border: solid $primary-background;
+    background: $surface;
+}
+
+#filter-input:focus {
     border: solid $primary;
 }
 

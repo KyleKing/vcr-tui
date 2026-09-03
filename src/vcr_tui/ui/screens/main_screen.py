@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from textual import work
+from textual import events, work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.screen import Screen
-from textual.widgets import Footer, Header
+from textual.widgets import Footer, Header, Input
 
 from vcr_tui.config import Config
 from vcr_tui.preview import PreviewEngine
@@ -33,7 +33,10 @@ class MainScreen(Screen[None]):
     BINDINGS = [
         Binding('q', 'quit', 'Quit'),
         Binding('r', 'reload_files', 'Reload files'),
+        Binding('/', 'filter_files', 'Filter files'),
     ]
+
+    FILTER_INPUT_ID = 'filter-input'
 
     def __init__(
         self,
@@ -51,7 +54,9 @@ class MainScreen(Screen[None]):
     def compose(self) -> ComposeResult:
         yield Header()
         with Horizontal(id='main-container'):
-            yield FileListWidget(id='file-list')
+            with Vertical(id='sidebar'):
+                yield Input(placeholder='Filter files…', id=self.FILTER_INPUT_ID)
+                yield FileListWidget(id='file-list')
             with Vertical(id='content-container'):
                 yield YAMLViewerWidget(id='yaml-viewer')
                 yield PreviewPanelWidget(id='preview-panel')
@@ -64,6 +69,33 @@ class MainScreen(Screen[None]):
 
     def action_reload_files(self) -> None:
         self._discover_files()
+
+    def action_filter_files(self) -> None:
+        self.query_one(f'#{self.FILTER_INPUT_ID}', Input).focus()
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == self.FILTER_INPUT_ID:
+            self.query_one('#file-list', FileListWidget).set_filter(event.value)
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        if event.input.id == self.FILTER_INPUT_ID:
+            self.query_one('#file-list', FileListWidget).set_filter(event.value)
+            self.query_one('#file-list', FileListWidget).focus()
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key != 'escape':
+            return
+        file_list = self.query_one('#file-list', FileListWidget)
+        input_focused = self.focused is not None and self.focused.id == self.FILTER_INPUT_ID
+        if input_focused or file_list.filter is not None:
+            event.stop()
+            self._clear_filter()
+
+    def _clear_filter(self) -> None:
+        filter_input = self.query_one(f'#{self.FILTER_INPUT_ID}', Input)
+        filter_input.value = ''
+        self.query_one('#file-list', FileListWidget).set_filter(None)
+        self.query_one('#file-list', FileListWidget).focus()
 
     @work(thread=True, exclusive=True)
     def _discover_files(self) -> None:
