@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Generate the code reference pages.
 
 Runs standalone (before ``zensical build``) and writes real Markdown stubs to

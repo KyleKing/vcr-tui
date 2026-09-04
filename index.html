@@ -691,25 +691,41 @@
 
 <h1 id="vcr-tui">vcr-tui<a class="headerlink" href="#vcr-tui" title="Permanent link">⚓︎</a></h1>
 <p>TUI for previewing VCR cassettes and machine-generated files</p>
+<p><code>vcr-tui</code> is a <a href="https://textual.textualize.io/">Textual</a> TUI plus a
+<a href="https://click.palletsprojects.com/">Click</a> CLI for browsing and previewing VCR
+cassettes (YAML) and other machine-generated files.</p>
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">⚓︎</a></h2>
-<ol>
-<li>
-<p><code>poetry add vcr_tui</code></p>
-</li>
-<li>
-<p>&hellip;</p>
-<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span>import<span class="w"> </span>vcr_tui
-<span class="linenos" data-linenos="2 "></span>
-<span class="linenos" data-linenos="3 "></span><span class="c1"># TODO: [Replace with your example code]</span>
+<p>Requires Python 3.11+. Install with <a href="https://docs.astral.sh/uv/">uv</a>:</p>
+<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span>uv<span class="w"> </span>tool<span class="w"> </span>install<span class="w"> </span>vcr-tui
 </code></pre></div>
-</li>
-<li>
-<p>&hellip;</p>
-</li>
-</ol>
+<p>Within a project already managed by uv, add it as a dependency instead:</p>
+<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span>uv<span class="w"> </span>add<span class="w"> </span>vcr-tui
+</code></pre></div>
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">⚓︎</a></h2>
-<!-- TODO: [Add screenshots or terminal recording demonstrating usage] -->
-
+<p>Open the TUI on a directory of cassettes:</p>
+<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span>vcr-tui<span class="w"> </span>path/to/cassettes
+</code></pre></div>
+<p>Inside it, <code>j</code>/<code>k</code> and the arrow keys move, <code>tab</code> cycles panes, <code>/</code> filters
+the focused pane, <code>c</code> switches channel, <code>r</code> rescans the directory, and <code>q</code>
+quits.</p>
+<p>The same directory is browsable from the shell. <code>files</code> lists what the active
+channel matches, <code>keys</code> lists the key paths inside one file, <code>preview</code> renders
+a file or a single key, and <code>channels</code> lists what is configured. <code>FILE</code> is a
+path from the current directory rather than from <code>DIRECTORY</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span>vcr-tui<span class="w"> </span>path/to/cassettes<span class="w"> </span>files
+<span class="linenos" data-linenos="2 "></span>vcr-tui<span class="w"> </span>path/to/cassettes<span class="w"> </span>keys<span class="w"> </span>path/to/cassettes/example_api.yaml
+<span class="linenos" data-linenos="3 "></span>vcr-tui<span class="w"> </span>path/to/cassettes<span class="w"> </span>preview<span class="w"> </span>path/to/cassettes/example_api.yaml<span class="w"> </span><span class="se">\</span>
+<span class="linenos" data-linenos="4 "></span><span class="w">  </span>-k<span class="w"> </span><span class="s1">&#39;interactions[0].response.body.string&#39;</span>
+<span class="linenos" data-linenos="5 "></span>vcr-tui<span class="w"> </span>path/to/cassettes<span class="w"> </span>channels
+</code></pre></div>
+<p>A JSON payload stored as a YAML string is expanded in place rather than shown
+escaped, which is the reason this exists:</p>
+<div class="highlight"><pre><span></span><code><span class="linenos" data-linenos="1 "></span><span class="nt">response</span><span class="p">:</span>
+<span class="linenos" data-linenos="2 "></span><span class="w">  </span><span class="nt">body</span><span class="p">:</span>
+<span class="linenos" data-linenos="3 "></span><span class="w">    </span><span class="nt">string</span><span class="p">:</span>
+<span class="linenos" data-linenos="4 "></span><span class="w">      </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="linenos" data-linenos="5 "></span><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">John Doe</span>
+</code></pre></div>
 <p>For more example code, see the <a href="https://github.com/kyleking/vcr-tui/blob/main/scripts">scripts</a> directory or the <a href="https://github.com/kyleking/vcr-tui/blob/main/tests">tests</a>.</p>
 <h2 id="project-status">Project Status<a class="headerlink" href="#project-status" title="Permanent link">⚓︎</a></h2>
 <p>See the <code>Open Issues</code> and/or the <a href="https://vcr-tui.kyleking.me/docs/CODE_TAG_SUMMARY">CODE_TAG_SUMMARY</a>. For release history, see the <a href="https://vcr-tui.kyleking.me/docs/CHANGELOG">CHANGELOG</a>.</p>

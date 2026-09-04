@@ -417,6 +417,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#perf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Perf
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -552,6 +574,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#perf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Perf
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -582,16 +626,34 @@
 <h2 id="unreleased">Unreleased<a class="headerlink" href="#unreleased" title="Permanent link">⚓︎</a></h2>
 <h3 id="feat">Feat<a class="headerlink" href="#feat" title="Permanent link">⚓︎</a></h3>
 <ul>
+<li><strong>config</strong>: add a json channel so a generated file previews like a cassette</li>
+<li><strong>ui</strong>: name the reload binding Rescan</li>
+<li><strong>ui</strong>: aim the / filter at the focused pane</li>
+<li><strong>ui</strong>: cycle the active channel with c</li>
+<li><strong>ui</strong>: filter the file list with /</li>
+<li><strong>ui</strong>: discover files off the UI thread and reload with r</li>
 <li>initialize Python implementation</li>
 </ul>
 <h3 id="fix">Fix<a class="headerlink" href="#fix" title="Permanent link">⚓︎</a></h3>
 <ul>
+<li><strong>preview</strong>: expand embedded JSON in every YAML render, not just file previews</li>
+<li><strong>preview</strong>: expand embedded JSON so a file preview is readable</li>
+<li><strong>config</strong>: let a local channel override the global definition</li>
 <li><strong>ui</strong>: show the files, the metadata, and the layout at a narrow width</li>
 <li><strong>preview</strong>: stop the yaml and toml formatters mangling non-table content</li>
 <li><strong>deps</strong>: bump click to 8.3.3 for PYSEC-2026-2132</li>
 <li><strong>deps</strong>: bump pygments to 2.20.0 for ReDoS advisory</li>
 <li><strong>deps</strong>: bump pytest to 9.0.3 for tmpdir handling advisory</li>
 <li>resolve ruff and mypy strict failures</li>
+</ul>
+<h3 id="refactor">Refactor<a class="headerlink" href="#refactor" title="Permanent link">⚓︎</a></h3>
+<ul>
+<li>adopt the full ruff rule set across the package</li>
+<li><strong>engine</strong>: drop the no-op path normalization</li>
+</ul>
+<h3 id="perf">Perf<a class="headerlink" href="#perf" title="Permanent link">⚓︎</a></h3>
+<ul>
+<li><strong>engine</strong>: walk the tree once instead of once per glob pattern</li>
 </ul>
 
 
