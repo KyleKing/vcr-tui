@@ -57,10 +57,6 @@ version_files = ["pyproject.toml:^version", "src/vcr_tui/__init__.py:^__version"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 
-[tool.pyright]
-include = ["vcr_tui", "tests"]
-pythonVersion = "3.11"
-
 [tool.ruff]
 # Docs: https://github.com/charliermarsh/ruff
 # Tip: uv run ruff rule unused-noqa
