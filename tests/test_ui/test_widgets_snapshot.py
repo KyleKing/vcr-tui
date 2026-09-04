@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Golden snapshot tests for the individual widgets.
 
 The preview panel's snapshot is intentionally replaced by direct assertions.

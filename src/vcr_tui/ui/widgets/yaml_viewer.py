@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Widget listing the selectable keys of the loaded YAML file."""
 
 from typing import Any, ClassVar

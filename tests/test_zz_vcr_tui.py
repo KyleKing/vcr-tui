@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Final test alphabetically (zz) to catch general integration cases."""
 
 from pathlib import Path

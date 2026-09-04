@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Main screen wiring the panes, filtering, and preview flow together."""
 
 from pathlib import Path

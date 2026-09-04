@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Shared type definitions for the preview subsystem."""
 
 from dataclasses import dataclass

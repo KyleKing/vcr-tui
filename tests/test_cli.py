@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Tests for the Click CLI via click.testing.CliRunner."""
 
 import shutil
@@ -101,7 +103,9 @@ class TestPreview:
         assert '"name": "John Doe"' in result.output
 
     def test_key_preview_metadata_on_default_channel(
-        self, runner: CliRunner, cassette: Path
+        self,
+        runner: CliRunner,
+        cassette: Path,
     ) -> None:
         result = runner.invoke(
             main,
@@ -132,7 +136,7 @@ class TestChannels:
 
     def test_local_config_adds_channel(self, runner: CliRunner, workspace: Path) -> None:
         (workspace / 'vcr-tui.toml').write_text(
-            '[channels.custom]\nglob_patterns = ["**/x.yaml"]\n'
+            '[channels.custom]\nglob_patterns = ["**/x.yaml"]\n',
         )
         result = runner.invoke(main, [str(workspace), 'channels'])
         assert result.exit_code == 0

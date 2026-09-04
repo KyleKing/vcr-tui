@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Tests for the public API of vcr_tui.preview.yaml_parser."""
 
 import pytest

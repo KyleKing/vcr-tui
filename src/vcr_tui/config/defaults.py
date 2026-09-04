@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Built-in channel and extraction configuration."""
 
 from vcr_tui.config.models import Channel, Config, ExtractionRule

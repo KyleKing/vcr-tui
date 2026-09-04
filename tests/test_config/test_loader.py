@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Tests for config loader layering (defaults -> global -> local)."""
 
 from pathlib import Path
@@ -85,7 +87,9 @@ class TestLoadConfig:
         assert load_config(tmp_path / 'proj').default_channel == 'yaml'
 
     def test_root_true_layers_global_but_stops_local_walk(
-        self, tmp_path: Path, global_config: Config
+        self,
+        tmp_path: Path,
+        global_config: Config,
     ) -> None:
         outer = tmp_path / 'outer'
         outer.mkdir()

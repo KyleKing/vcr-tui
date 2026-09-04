@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 __all__ = [
     'FileListWidget',
     'FileSelected',

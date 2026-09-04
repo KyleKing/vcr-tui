@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Widget listing the discovered cassette files."""
 
 from pathlib import Path

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Filter binding narrows the file list and escape restores it."""
 
 import shutil

@@ -1,4 +1,6 @@
+# Copyright (c) 2026 Kyle King
 """YAML loading and key-path access for previewed files."""
+
 from pathlib import Path
 from typing import Any
 

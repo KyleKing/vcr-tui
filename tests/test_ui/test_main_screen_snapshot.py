@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Golden snapshot tests for the TUI (run `pytest --snapshot-update` to refresh).
 
 Two of the three platform-divergent states are covered here by direct

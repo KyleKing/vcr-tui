@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Dataclasses describing channels, extraction rules, and merged config."""
 
 from dataclasses import dataclass
@@ -18,7 +20,11 @@ class ExtractionRule:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'ExtractionRule':
-        """Build a rule from its TOML table."""
+        """Build a rule from its TOML table.
+
+        Returns:
+            The assembled extraction rule.
+        """
         return cls(
             path=data['path'],
             formatter=data['formatter'],
@@ -38,7 +44,11 @@ class Channel:
 
     @classmethod
     def from_dict(cls, name: str, data: dict[str, Any]) -> 'Channel':
-        """Build a channel from its TOML table."""
+        """Build a channel from its TOML table.
+
+        Returns:
+            The assembled channel.
+        """
         rules = tuple(ExtractionRule.from_dict(r) for r in data.get('extraction_rules', []))
         return cls(
             name=name,
@@ -58,7 +68,11 @@ class Config:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'Config':
-        """Build a config from its TOML table."""
+        """Build a config from its TOML table.
+
+        Returns:
+            The assembled config.
+        """
         channels_data = data.get('channels', {})
         channels = tuple(starmap(Channel.from_dict, channels_data.items()))
         return cls(
@@ -68,14 +82,22 @@ class Config:
         )
 
     def get_channel(self, name: str | None = None) -> Channel | None:
-        """Resolve a channel by name, falling back to the default then the first."""
+        """Resolve a channel by name, falling back to the default then the first.
+
+        Returns:
+            The matching channel, or None when nothing matches.
+        """
         target = name or self.default_channel
         if not target:
             return self.channels[0] if self.channels else None
         return next((ch for ch in self.channels if ch.name == target), None)
 
     def merge(self, other: 'Config') -> 'Config':
-        """Overlay other on top of self, replacing same-named channels."""
+        """Overlay other on top of self, replacing same-named channels.
+
+        Returns:
+            The merged config.
+        """
         merged_channels = list(self.channels)
         positions = {ch.name: i for i, ch in enumerate(merged_channels)}
         for ch in other.channels:

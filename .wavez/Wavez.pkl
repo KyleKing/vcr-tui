@@ -248,6 +248,20 @@ class Check {
   /// puts files the run never touched into the diff a human reads.
   command: String
 
+  /// A command applying this check's own mechanical fixes, run over the same
+  /// files immediately before `command`. A finding the tool resolves itself
+  /// is a difference no judgment settles, so paying a turn for it is waste:
+  /// the 2026-09-03 vcr-tui lane spent one call on `ruff check --fix`.
+  ///
+  /// Declare only the safe half. `ruff check --fix` applies fixes ruff calls
+  /// safe and `--unsafe-fixes` applies the ones that can change behaviour,
+  /// which is an edit nobody reviewed. Every file this rewrites is named to
+  /// the run and enters the change set, because a file edited under a run
+  /// without it being told is worse than the finding.
+  ///
+  /// `{files}` is substituted as it is in `command`.
+  fix: String = ""
+
   /// Whether this check rewrites the files it reads, which is what a
   /// formatter does. A rewriting check takes the worktree exclusively, so it
   /// finishes before any check that reads what it wrote, and the command

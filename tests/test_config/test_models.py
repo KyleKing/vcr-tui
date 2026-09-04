@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Tests for config models: from_dict and merge."""
 
 from typing import Any
@@ -30,10 +32,10 @@ class TestFromDict:
                                     'formatter': 'json',
                                     'label': 'A',
                                     'metadata_keys': ['k'],
-                                }
+                                },
                             ],
-                        }
-                    }
+                        },
+                    },
                 },
                 Config(
                     channels=(
@@ -49,7 +51,7 @@ class TestFromDict:
                                 ),
                             ),
                         ),
-                    )
+                    ),
                 ),
             ),
         ],
@@ -71,7 +73,7 @@ class TestFromDict:
 
     def test_rule_defaults(self) -> None:
         config = Config.from_dict(
-            {'channels': {'c': {'extraction_rules': [{'path': '.p', 'formatter': 'text'}]}}}
+            {'channels': {'c': {'extraction_rules': [{'path': '.p', 'formatter': 'text'}]}}},
         )
         rule = config.channels[0].extraction_rules[0]
         assert rule.label is None
@@ -82,7 +84,7 @@ class TestFromDict:
             {
                 'default_channel': 'b',
                 'channels': {'a': {}, 'b': {}},
-            }
+            },
         )
         named = config.get_channel('a')
         assert named is not None
@@ -112,7 +114,7 @@ class TestMerge:
 
     def test_merge_overrides_existing_channel(self) -> None:
         base = Config.from_dict(
-            {'channels': {'a': {'glob_patterns': ['**/base.yaml'], 'enabled': False}}}
+            {'channels': {'a': {'glob_patterns': ['**/base.yaml'], 'enabled': False}}},
         )
         other = Config.from_dict({'channels': {'a': {'glob_patterns': ['**/other.yaml']}}})
         merged = base.merge(other)

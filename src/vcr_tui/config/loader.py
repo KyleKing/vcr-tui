@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Kyle King
 """Discovery and merging of layered TOML configuration files."""
 
 import tomllib

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Shared fixtures for preview tests."""
 
 from pathlib import Path

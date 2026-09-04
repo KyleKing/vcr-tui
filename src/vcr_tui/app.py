@@ -1,4 +1,6 @@
+# Copyright (c) 2026 Kyle King
 """Root Textual application for the VCR-TUI interface."""
+
 from pathlib import Path
 
 from textual.app import App

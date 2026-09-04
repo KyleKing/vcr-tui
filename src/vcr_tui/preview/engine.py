@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Core engine that discovers cassette files and builds previews."""
 
 from collections.abc import Iterator
@@ -20,7 +22,11 @@ class PreviewEngine:
         self.config = config
 
     def discover_files(self, directory: Path, channel_name: str | None = None) -> list[Path]:
-        """List files under the directory matching the channel's glob patterns."""
+        """List files under the directory matching the channel's glob patterns.
+
+        Returns:
+            The matching file paths sorted by name, or empty when no channel matches.
+        """
         channel = self.config.get_channel(channel_name)
         if not channel:
             return []
@@ -54,6 +60,9 @@ class PreviewEngine:
         match anything when the start directory *is* the cassettes directory,
         since there is no ``cassettes`` level below it — so a leading literal
         segment equal to the start directory's name is dropped as well.
+
+        Returns:
+            The adjusted pattern.
         """
         if not pattern.startswith('**/'):
             return pattern
@@ -65,7 +74,11 @@ class PreviewEngine:
 
     @staticmethod
     def get_keys(file_path: Path) -> list[YAMLKey]:
-        """List the selectable YAML keys contained in the file."""
+        """List the selectable YAML keys contained in the file.
+
+        Returns:
+            The YAML keys.
+        """
         return get_yaml_keys(file_path)
 
     def preview_key(
@@ -74,7 +87,11 @@ class PreviewEngine:
         key_path: str,
         channel_name: str | None = None,
     ) -> PreviewResult:
-        """Format the value at one key path using the matching extraction rule."""
+        """Format the value at one key path using the matching extraction rule.
+
+        Returns:
+            The formatted preview result.
+        """
         data = load_yaml(file_path)
         value = get_value_at_path(data, key_path)
 
@@ -100,7 +117,11 @@ class PreviewEngine:
         file_path: Path,
         channel_name: str | None = None,
     ) -> PreviewResult:
-        """Format the whole file as YAML."""
+        """Format the whole file as YAML.
+
+        Returns:
+            The formatted preview result.
+        """
         data = load_yaml(file_path)
         channel = self.config.get_channel(channel_name)
 
@@ -154,7 +175,7 @@ class PreviewEngine:
 
     def _extract_metadata(
         self,
-        data: Any,
+        data: object,
         key_path: str,
         rule: ExtractionRule | None,
     ) -> dict[str, Any]:

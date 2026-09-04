@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Kyle King
+# SPDX-License-Identifier: MIT
 """Command-line entry points for the VCR-TUI tool."""
 
 from pathlib import Path
