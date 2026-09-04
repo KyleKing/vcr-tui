@@ -3,7 +3,7 @@
 # DO NOT MODIFY THIS FILE. Edit by re-running copier and changing responses to the questions
 # Check into version control.
 _commit: 5.5.2
-_src_path: ../calcipy_template
+_src_path: gh:KyleKing/calcipy_template
 author_email: dev.act.kyle@gmail.com
 author_name: Kyle King
 author_username: kyleking
