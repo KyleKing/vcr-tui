@@ -23,6 +23,12 @@ Still open from that migration:
   calcipy ruff standard; revisit only then.
 - Ruff currently uses this project's narrow `select` list; migrating to the
   calcipy `select = ['ALL']` standard is ~155 fixes, mostly docstrings.
+- `.copier-answers.yml`'s `_src_path` is `../calcipy_template`, a relative
+  filesystem path, unlike every sibling calcipy child (`gh:KyleKing/calcipy_template`).
+  A `copier update` run here pulls whatever the local `calcipy_template`
+  checkout currently has, including unreleased commits, instead of the pinned
+  tag. Fixing it to `gh:KyleKing/calcipy_template` is a one-line answer
+  correction, not a patch re-apply.
 
 ## 1. Tests
 
