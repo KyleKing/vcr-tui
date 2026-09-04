@@ -141,7 +141,7 @@ class TestDiscoverFiles:
         calls: list[Path] = []
         original: Callable[..., Iterator[Path]] = Path.rglob
 
-        def counting_rglob(self: Path, pattern: str) -> Iterator[Path]:  # noqa: ANN202
+        def counting_rglob(self: Path, pattern: str) -> Iterator[Path]:
             calls.append(self)
             return original(self, pattern)
 

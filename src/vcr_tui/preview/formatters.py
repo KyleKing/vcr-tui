@@ -16,7 +16,7 @@ from vcr_tui.config.models import FormatterType
 _yaml = YAML()
 _yaml.default_flow_style = False
 
-JsonLike: TypeAlias = "str | int | float | bool | None | list[JsonLike] | dict[str, JsonLike]"
+JsonLike: TypeAlias = 'str | int | float | bool | list[JsonLike] | dict[str, JsonLike] | None'
 """Recursive alias for JSON-compatible preview content."""
 
 
