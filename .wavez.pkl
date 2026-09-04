@@ -19,6 +19,9 @@ checks {
   ["lint"] {
     paths = new Listing { "*.py" }
     command = "uv run ruff check {files}"
+    // Only ruff's safe fixes. `--unsafe-fixes` changes behaviour, which is an
+    // edit nobody reviewed.
+    fix = "uv run ruff check --fix {files}"
   }
   ["types"] {
     paths = new Listing { "*.py" }
