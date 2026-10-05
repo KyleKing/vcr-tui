@@ -1,0 +1,94 @@
+# Example VCR-TUI Configuration
+# Place this file as .vcr-tui.toml or vcr-tui.toml in your project root
+
+# Stop searching parent directories for configs
+root = true
+
+# Set the default channel to use
+default_channel = "vcr"
+
+# VCR Channel - For VCR cassette files
+[channels.vcr]
+glob_patterns = ["**/*.yaml", "**/*.yml", "**/cassettes/**/*.yaml"]
+enabled = true
+
+# Extract response body as text
+[[channels.vcr.extraction_rules]]
+path = "interactions[].response.body.string"
+formatter = "text"
+label = "Response Body (Text)"
+
+# Extract response body as JSON
+[[channels.vcr.extraction_rules]]
+path = "interactions[].response.body.string"
+formatter = "json"
+label = "Response Body (JSON)"
+
+# Extract response body as HTML
+[[channels.vcr.extraction_rules]]
+path = "interactions[].response.body.string"
+formatter = "html"
+label = "Response Body (HTML)"
+
+# Extract request method and URI
+[[channels.vcr.extraction_rules]]
+path = "interactions[].request.method"
+formatter = "text"
+label = "Request Method"
+
+[[channels.vcr.extraction_rules]]
+path = "interactions[].request.uri"
+formatter = "text"
+label = "Request URI"
+
+# Extract response status
+[[channels.vcr.extraction_rules]]
+path = "interactions[].response.status.code"
+formatter = "text"
+label = "Response Status Code"
+
+# YAML Channel - For generic YAML files
+[channels.yaml]
+glob_patterns = ["**/*.yaml", "**/*.yml"]
+enabled = true
+
+[[channels.yaml.extraction_rules]]
+path = "data"
+formatter = "yaml"
+label = "Data Section"
+
+# Custom API Channel - For API response files
+[channels.api]
+glob_patterns = ["**/responses/*.json", "**/api/**/*.json"]
+enabled = true
+
+[[channels.api.extraction_rules]]
+path = "body"
+formatter = "json"
+label = "API Response Body"
+metadata_keys = ["status", "headers.content-type"]
+
+[[channels.api.extraction_rules]]
+path = "error.message"
+formatter = "text"
+label = "Error Message"
+
+[[channels.api.extraction_rules]]
+path = "data.items[]"
+formatter = "json"
+label = "Data Items (Array)"
+
+# Custom Test Fixtures Channel
+[channels.fixtures]
+glob_patterns = ["**/fixtures/**/*.yaml", "**/test_data/**/*.yaml"]
+enabled = false  # Disabled by default
+
+[[channels.fixtures.extraction_rules]]
+path = "expected"
+formatter = "yaml"
+label = "Expected Output"
+
+[[channels.fixtures.extraction_rules]]
+path = "input"
+formatter = "yaml"
+label = "Test Input"

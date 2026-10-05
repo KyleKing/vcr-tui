@@ -46,7 +46,8 @@ dev = [
 ]
 
 [project.scripts]
-vcr-tui = "vcr_tui.cli:main"
+vcr-tui = "vcr_tui.__main__:main"
+vcr-tui-cli = "vcr_tui.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/vcr_tui"]
