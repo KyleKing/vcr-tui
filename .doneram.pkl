@@ -7,8 +7,8 @@
 // project added itself, e.g. a declared dependency in pyproject.toml, a
 // tool in mise.toml, or a CDN URL in a template it wrote.
 
-amends "package://github.com/kyleking/doneram/releases/download/v0.6.1/doneram@0.6.1#/Config.pkl"
-import "package://github.com/kyleking/doneram/releases/download/v0.6.1/doneram@0.6.1#/Config.pkl"
+amends "package://github.com/kyleking/doneram/releases/download/v0.5.1/doneram@0.5.1#/Config.pkl"
+import "package://github.com/kyleking/doneram/releases/download/v0.5.1/doneram@0.5.1#/Config.pkl"
 
 tools = new {
   ["doneram-schema"] = new {
