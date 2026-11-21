@@ -49,14 +49,25 @@ Launch the interactive TUI for a directory of cassettes:
 vcr-tui path/to/cassettes
 ```
 
+In the TUI, a cassette opens as a list of its recorded requests (method,
+status, response size, URL). Highlighting one shows its request and response
+headers and decoded bodies: JSON pretty-printed, gzip/deflate and `!!binary`
+bodies decoded, form data split into pairs. `v` toggles the raw YAML key tree,
+`/` filters whichever list has focus, `c` cycles channels, and `r` rescans.
+
 Or use the CLI subcommands for quick inspection without the TUI:
 
 ```sh
-vcr-tui files                    # list discoverable cassette files
-vcr-tui keys cassette.yaml       # print the YAML key structure
-vcr-tui preview cassette.yaml    # render a formatted preview
-vcr-tui channels                 # list configured preview channels
+vcr-tui files                            # list discoverable cassette files
+vcr-tui interactions cassette.yaml       # one line per recorded request
+vcr-tui interactions cassette.yaml -i 1  # full request and response of one
+vcr-tui keys cassette.yaml               # print the YAML key structure
+vcr-tui preview cassette.yaml            # render a formatted preview
+vcr-tui channels                         # list configured preview channels
 ```
+
+Both vcrpy/pytest-recording (`interactions:`) and Ruby VCR
+(`http_interactions:`) cassettes are recognised.
 
 Configuration is layered TOML: built-in defaults → global config in your
 platform config dir → a `vcr-tui.toml` found walking up from the start
