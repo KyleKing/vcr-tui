@@ -1,9 +1,8 @@
 # Next Steps
 
-A prioritized roadmap written from the actual state of the tree: ~950 lines of
-working code in `src/vcr_tui` (CLI + Textual TUI for previewing VCR cassettes),
-one fixture cassette in `fixtures/cassettes/example_api.yaml`, and 156 passing
-tests at 95% statement coverage.
+Sections 0-5 track the original build-out and are essentially closed. Section 6
+is the product roadmap: making this a tool for visualizing and auditing the
+snapshotted data a test suite records.
 
 ## 0. Template adoption follow-ups
 
@@ -21,8 +20,9 @@ Still open from that migration:
   `uv run ty check src`, and `uv run pytest` (see AGENTS.local.md). `./run`
   stays as the calcipy convenience wrapper until this project adopts the
   calcipy ruff standard; revisit only then.
-- Ruff currently uses this project's narrow `select` list; migrating to the
-  calcipy `select = ['ALL']` standard is ~155 fixes, mostly docstrings.
+- ~~Ruff currently uses this project's narrow `select` list~~ — done: the
+  package adopted the calcipy `select = ['ALL']` standard (`076ac8a`,
+  `976759e`).
 
 ## 1. Tests
 
@@ -127,3 +127,58 @@ file against [Textualize/textual](https://github.com/Textualize/textual). No
 issue has been opened. Nothing is worked around in this repo, because a driver
 subclass here would hide an upstream defect every other Textual app still
 has.
+
+## 6. Product roadmap: auditing snapshotted data
+
+The goal is to answer "what does my test suite actually record, and what
+changed?" without reading raw YAML. Each milestone ships on its own. All parsing
+lives in `preview/` (no UI imports) so it is testable without the TUI.
+
+### M1. Interactions as the unit of navigation — done
+
+- `preview/cassette.py` parses vcrpy/pytest-recording (`interactions:`) and
+  Ruby VCR (`http_interactions:`) cassettes into `Interaction` records and
+  decodes bodies: JSON pretty-printed, gzip/deflate, `!!binary` and
+  `base64_string`, form-encoded pairs, HTML/XML detection, a size placeholder
+  for non-UTF-8 bytes.
+- The TUI opens a cassette as a network-tab-style list
+  (`# METHOD STATUS SIZE host/path`); highlighting a row shows request and
+  response headers plus the highlighted body. `v` toggles the raw key tree,
+  `/` filters whichever list is focused.
+- CLI: `vcr-tui interactions FILE` lists rows, `-i N` prints one in full.
+- Follow-ups: `_load_keys` parses the YAML twice (keys, then interactions);
+  load once if large cassettes feel slow. Query parameters are parsed
+  (`Interaction.query`) but not yet shown as their own section.
+
+### M2. Suite overview and audit (`vcr-tui audit` + a summary screen)
+
+- Endpoint x status matrix across every cassette, request counts per host.
+- Cassettes with no matching test (pytest-recording's
+  `cassettes/<module>/<test>.yaml` naming) and tests whose cassette is missing.
+- Leaked secrets: `Authorization`, `Cookie`, `Set-Cookie`, API-key-looking
+  query parameters, tokens and emails in bodies.
+- Duplicate and oversized interactions.
+- Exit non-zero on findings so it can gate CI.
+
+### M3. Diff against git (`vcr-tui diff [REF]` + a diff view)
+
+- Pair interactions across two versions of a cassette and compare them
+  semantically: status changes, JSON fields added/removed/changed, interactions
+  added/removed.
+- Ignore volatile headers and fields (`Date`, request IDs, timestamps) via
+  config, so the diff shows what a reviewer cares about.
+
+### M4. More snapshot formats
+
+Replace glob-only channels with format adapters that turn a file into records.
+Priority, from what this project's own users produce:
+
+1. syrupy `.ambr` (amber) snapshots: one record per `# name: test_x` block.
+2. Later candidates: pytest-regressions files, HAR, inline-snapshot, Textual
+   SVG snapshots.
+
+### Small items
+
+- Re-add a `?` help modal listing the key bindings (an idea from the closed
+  Phase 3 PR #6).
+- Ship an annotated `examples/vcr-tui.toml` (from the closed Phase 5 PR #5).
