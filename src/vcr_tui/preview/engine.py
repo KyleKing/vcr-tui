@@ -10,8 +10,8 @@ from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
 from vcr_tui.preview.audit import Cassette
 from vcr_tui.preview.cassette import Interaction, is_cassette, parse_cassette
 from vcr_tui.preview.diff import CassetteDiff, DiffOptions, diff_cassette
-from vcr_tui.preview.git_source import changed_files, read_at_ref, repo_root
 from vcr_tui.preview.formatters import format_content
+from vcr_tui.preview.git_source import ChangedFile, changed_files, read_at_ref, repo_root
 from vcr_tui.preview.types import PreviewResult, YAMLKey
 from vcr_tui.preview.yaml_parser import (
     get_value_at_path,
@@ -90,12 +90,7 @@ class PreviewEngine:
             if not self.matches_channel(changed.path, directory, channel_name):
                 continue
             try:
-                old = None
-                if changed.status != 'added':
-                    old = _cassette_or_none(load_yaml_text(read_at_ref(root, changed.path, ref)))
-                new = None
-                if changed.status != 'deleted':
-                    new = _cassette_or_none(load_yaml(changed.path))
+                old, new = _load_versions(root, changed, ref)
             except Exception as exc:
                 reason = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
                 unreadable.append((changed.path, reason))
@@ -316,3 +311,18 @@ class PreviewEngine:
 
 def _cassette_or_none(data: object) -> list[Interaction] | None:
     return parse_cassette(data) if is_cassette(data) else None
+
+
+def _load_versions(
+    root: Path,
+    changed: ChangedFile,
+    ref: str,
+) -> tuple[list[Interaction] | None, list[Interaction] | None]:
+    """Parse a changed file at the ref and in the working tree; None where absent or no cassette."""
+    old = None
+    if changed.status != 'added':
+        old = _cassette_or_none(load_yaml_text(read_at_ref(root, changed.path, ref)))
+    new = None
+    if changed.status != 'deleted':
+        new = _cassette_or_none(load_yaml(changed.path))
+    return old, new

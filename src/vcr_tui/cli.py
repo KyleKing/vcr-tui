@@ -211,10 +211,11 @@ def audit_command(
 def diff_command(
     ctx: click.Context,
     ref: str,
+    *,
     ignore_header: tuple[str, ...],
     ignore_field: tuple[str, ...],
     output_format: str,
-    exit_code: bool,  # noqa: FBT001
+    exit_code: bool,
 ) -> None:
     """Compare cassettes under the directory with their versions at a git REF.
 

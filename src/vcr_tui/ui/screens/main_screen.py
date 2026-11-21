@@ -68,7 +68,8 @@ class DiffReady(Message):
         super().__init__()
 
 
-class MainScreen(Screen[None]):
+# Textual dispatches on public on_*/action_* names, so each handler counts as a public method.
+class MainScreen(Screen[None]):  # noqa: PLR0904
     """Primary screen hosting the file, key, preview, and metadata panes."""
 
     # NOTE: Screen already binds tab/shift+tab to app.focus_next/app.focus_previous;
