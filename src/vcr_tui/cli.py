@@ -10,6 +10,7 @@ from vcr_tui.app import VCRTUIApp
 from vcr_tui.config import load_config
 from vcr_tui.config.models import Config
 from vcr_tui.preview import PreviewEngine
+from vcr_tui.preview.cassette import format_row, render_text
 
 
 @click.group(invoke_without_command=True)
@@ -80,6 +81,36 @@ def preview(ctx: click.Context, file: Path, key: str | None) -> None:
         click.echo('---', err=True)
 
     click.echo(result.content)
+
+
+@main.command()
+@click.argument('file', type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option(
+    '--index',
+    '-i',
+    type=int,
+    help='Print the full request and response of the interaction at this index',
+)
+@click.pass_context
+def interactions(ctx: click.Context, file: Path, index: int | None) -> None:
+    """List a cassette's recorded HTTP interactions, or show one in full."""
+    engine: PreviewEngine = ctx.obj['engine']
+
+    found = engine.get_interactions(file)
+    if found is None:
+        msg = f'{file} is not a VCR cassette'
+        raise click.ClickException(msg)
+
+    if index is None:
+        for interaction in found:
+            click.echo(format_row(interaction))
+        return
+
+    match = next((i for i in found if i.index == index), None)
+    if match is None:
+        msg = f'no interaction {index} in {file} ({len(found)} recorded)'
+        raise click.ClickException(msg)
+    click.echo(render_text(match))
 
 
 @main.command()
