@@ -67,16 +67,16 @@ async def test_escape_without_filter_leaves_focus_untouched(tmp_path: Path) -> N
 
         await pilot.press('tab')
         await pilot.pause()
-        yaml_viewer = screen.query_one('#yaml-viewer')
-        assert screen.focused is yaml_viewer
+        interaction_list = screen.query_one('#interaction-list')
+        assert screen.focused is interaction_list
 
         await pilot.press('escape')
         await pilot.pause()
-        assert screen.focused is yaml_viewer
+        assert screen.focused is interaction_list
 
 
 async def test_filter_with_viewer_focused_targets_keys(tmp_path: Path) -> None:
-    """`/` with the YAML viewer focused filters keys, leaving the file list alone."""
+    """`/` with the raw YAML viewer focused filters keys, leaving the file list alone."""
     directory = tmp_path / 'cassettes'
     shutil.copytree(CASSETTES, directory)
 
@@ -93,7 +93,7 @@ async def test_filter_with_viewer_focused_targets_keys(tmp_path: Path) -> None:
         all_keys = [k.path for k in yaml_viewer._keys]
         assert len(all_keys) > 1
 
-        await pilot.press('tab')
+        await pilot.press('v', 'tab')
         await pilot.pause()
         assert screen.focused is yaml_viewer
 

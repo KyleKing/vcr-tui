@@ -14,10 +14,12 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header, Input
 
 from vcr_tui.config import Config
-from vcr_tui.preview import PreviewEngine
+from vcr_tui.preview import Interaction, PreviewEngine
 from vcr_tui.ui.widgets import (
     FileListWidget,
     FileSelected,
+    InteractionListWidget,
+    InteractionSelected,
     KeySelected,
     MetadataBarWidget,
     PreviewPanelWidget,
@@ -47,11 +49,13 @@ class MainScreen(Screen[None]):
         Binding('r', 'reload_files', 'Rescan'),
         Binding('/', 'filter_panes', 'Filter'),
         Binding('c', 'cycle_channel', 'Cycle channel'),
+        Binding('v', 'toggle_view', 'Requests/raw'),
     ]
 
     FILTER_INPUT_ID = 'filter-input'
     FILES_PANE = 'files'
     KEYS_PANE = 'keys'
+    INTERACTIONS_PANE = 'interactions'
 
     def __init__(
         self,
@@ -67,6 +71,8 @@ class MainScreen(Screen[None]):
         self.engine = PreviewEngine(config)
         self._current_file: Path | None = None
         self._filter_target: str = self.FILES_PANE
+        self._interactions: list[Interaction] | None = None
+        self._raw_view = False
 
     @property
     def filter_target(self) -> str:
@@ -85,6 +91,7 @@ class MainScreen(Screen[None]):
                 yield Input(placeholder='Filter files…', id=self.FILTER_INPUT_ID)
                 yield FileListWidget(id='file-list')
             with Vertical(id='content-container'):
+                yield InteractionListWidget(id='interaction-list')
                 yield YAMLViewerWidget(id='yaml-viewer')
                 yield PreviewPanelWidget(id='preview-panel')
                 yield MetadataBarWidget(id='metadata-bar')
@@ -93,6 +100,7 @@ class MainScreen(Screen[None]):
     def on_mount(self) -> None:
         """Title the screen, start the scan, and focus the file list."""
         self._update_header_title()
+        self._sync_view()
         self._discover_files()
         self.query_one('#file-list').focus()
 
@@ -122,16 +130,39 @@ class MainScreen(Screen[None]):
         name = self._resolved_channel_name()
         self.sub_title = f'channel: {name}' if name else None
 
+    @property
+    def showing_interactions(self) -> bool:
+        """Whether the interaction list (rather than the raw key tree) is shown."""
+        return self._interactions is not None and not self._raw_view
+
+    def action_toggle_view(self) -> None:
+        """Switch between a cassette's interaction list and its raw YAML keys."""
+        self._raw_view = not self._raw_view
+        self._sync_view()
+        self.query_one('#preview-panel', PreviewPanelWidget).clear_preview()
+        self.query_one('#metadata-bar', MetadataBarWidget).clear_metadata()
+
+    def _sync_view(self) -> None:
+        """Show whichever of the interaction list and key tree applies, keeping focus visible."""
+        interaction_list = self.query_one('#interaction-list', InteractionListWidget)
+        yaml_viewer = self.query_one('#yaml-viewer', YAMLViewerWidget)
+        show_interactions = self.showing_interactions
+        interaction_list.display = show_interactions
+        yaml_viewer.display = not show_interactions
+        if self.focused in (interaction_list, yaml_viewer):
+            (interaction_list if show_interactions else yaml_viewer).focus()
+
     def action_filter_panes(self) -> None:
         """Focus the filter input, aimed at whichever pane currently has focus."""
-        if self.focused is not None and self.focused.id == 'yaml-viewer':
-            self._filter_target = self.KEYS_PANE
-        else:
-            self._filter_target = self.FILES_PANE
+        focused_id = self.focused.id if self.focused is not None else None
+        targets = {'yaml-viewer': self.KEYS_PANE, 'interaction-list': self.INTERACTIONS_PANE}
+        self._filter_target = targets.get(focused_id or '', self.FILES_PANE)
+        placeholders = {
+            self.KEYS_PANE: 'Filter YAML keys…',
+            self.INTERACTIONS_PANE: 'Filter requests…',
+        }
         filter_input = self.query_one(f'#{self.FILTER_INPUT_ID}', Input)
-        filter_input.placeholder = (
-            'Filter YAML keys…' if self._filter_target == self.KEYS_PANE else 'Filter files…'
-        )
+        filter_input.placeholder = placeholders.get(self._filter_target, 'Filter files…')
         filter_input.focus()
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -155,9 +186,11 @@ class MainScreen(Screen[None]):
             event.stop()
             self._clear_filter()
 
-    def _filtered_pane(self) -> FileListWidget | YAMLViewerWidget:
+    def _filtered_pane(self) -> FileListWidget | YAMLViewerWidget | InteractionListWidget:
         if self._filter_target == self.KEYS_PANE:
             return self.query_one('#yaml-viewer', YAMLViewerWidget)
+        if self._filter_target == self.INTERACTIONS_PANE:
+            return self.query_one('#interaction-list', InteractionListWidget)
         return self.query_one('#file-list', FileListWidget)
 
     def _set_filter(self, value: str | None) -> None:
@@ -182,6 +215,8 @@ class MainScreen(Screen[None]):
 
         if not files:
             self._current_file = None
+            self._interactions = None
+            self._sync_view()
             return
 
         current = self._current_file
@@ -194,6 +229,11 @@ class MainScreen(Screen[None]):
         keys = self.engine.get_keys(file_path)
         yaml_viewer = self.query_one('#yaml-viewer', YAMLViewerWidget)
         yaml_viewer.set_keys(keys)
+
+        self._interactions = self.engine.get_interactions(file_path)
+        interaction_list = self.query_one('#interaction-list', InteractionListWidget)
+        interaction_list.set_interactions(self._interactions or [])
+        self._sync_view()
 
     def on_file_selected(self, event: FileSelected) -> None:
         """Load the selected file's keys and clear the old preview."""
@@ -221,6 +261,18 @@ class MainScreen(Screen[None]):
 
         preview_panel.set_preview(result)
         metadata_bar.set_metadata(result.metadata)
+
+    def on_interaction_selected(self, event: InteractionSelected) -> None:
+        """Preview the highlighted interaction's request and response."""
+        interaction = event.interaction
+        self.query_one('#preview-panel', PreviewPanelWidget).set_interaction(interaction)
+        metadata = {
+            'interaction': f'{interaction.index + 1}/{len(self._interactions or [])}',
+            'status.code': interaction.status_code,
+            'request.method': interaction.method,
+            'request.uri': interaction.uri,
+        }
+        self.query_one('#metadata-bar', MetadataBarWidget).set_metadata(metadata)
 
     def action_quit(self) -> None:
         """Exit the application."""
