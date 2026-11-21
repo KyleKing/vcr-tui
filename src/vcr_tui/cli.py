@@ -14,7 +14,7 @@ from vcr_tui.preview import PreviewEngine
 from vcr_tui.preview.audit import (
     DEFAULT_MAX_BODY_BYTES,
     AuditOptions,
-    audit as run_audit,
+    audit,
     render_report,
     report_to_dict,
 )
@@ -121,7 +121,7 @@ def interactions(ctx: click.Context, file: Path, index: int | None) -> None:
     click.echo(render_text(match))
 
 
-@main.command()
+@main.command(name='audit')
 @click.option(
     '--format',
     'output_format',
@@ -151,7 +151,7 @@ def interactions(ctx: click.Context, file: Path, index: int | None) -> None:
     help='Flag response bodies larger than this many bytes',
 )
 @click.pass_context
-def audit(
+def audit_command(
     ctx: click.Context,
     output_format: str,
     fail_on: str,
@@ -171,7 +171,7 @@ def audit(
 
     cassettes, unreadable = engine.load_cassettes(directory, channel)
     options = AuditOptions(max_body_bytes=max_body, skip=frozenset(skip))
-    report = run_audit(cassettes, options, unreadable)
+    report = audit(cassettes, options, unreadable)
 
     if output_format == 'json':
         click.echo(json.dumps(report_to_dict(report, directory), indent=2))

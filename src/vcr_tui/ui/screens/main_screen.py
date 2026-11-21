@@ -161,7 +161,7 @@ class MainScreen(Screen[None]):
         show_interactions = self.showing_interactions
         interaction_list.display = show_interactions
         yaml_viewer.display = not show_interactions
-        if self.focused in (interaction_list, yaml_viewer):
+        if self.focused in {interaction_list, yaml_viewer}:
             (interaction_list if show_interactions else yaml_viewer).focus()
 
     def action_filter_panes(self) -> None:
