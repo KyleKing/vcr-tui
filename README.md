@@ -53,8 +53,8 @@ In the TUI, a cassette opens as a list of its recorded requests (method,
 status, response size, URL). Highlighting one shows its request and response
 headers and decoded bodies: JSON pretty-printed, gzip/deflate and `!!binary`
 bodies decoded, form data split into pairs. `v` toggles the raw YAML key tree,
-`/` filters whichever list has focus, `a` opens the suite audit, `c` cycles
-channels, and `r` rescans.
+`/` filters whichever list has focus, `a` opens the suite audit, `d` shows what
+changed since `HEAD`, `c` cycles channels, and `r` rescans.
 
 Or use the CLI subcommands for quick inspection without the TUI:
 
@@ -66,7 +66,30 @@ vcr-tui keys cassette.yaml               # print the YAML key structure
 vcr-tui preview cassette.yaml            # render a formatted preview
 vcr-tui channels                         # list configured preview channels
 vcr-tui audit                            # summarize and audit every cassette
+vcr-tui diff [REF]                       # what changed in each cassette since REF
 ```
+
+### Reviewing re-recorded cassettes
+
+`vcr-tui [DIR] diff [REF] [--ignore-header NAME] [--ignore-field KEY] [--format json] [--exit-code]`
+compares every changed cassette under the directory with its version at `REF`
+(default `HEAD`, so it shows a re-recording before you commit it; untracked
+cassettes count as added). Interactions are paired by method and URL path in
+recorded order, then compared on status, headers, and bodies:
+
+```text
+tests/cassettes/test_api/test_list.yaml (modified): 1 changed, 1 added, 0 removed, 4 unchanged
+  ~ #2 GET https://api.example.com/users?page=2
+      ~ status: 200 OK -> 404 Not Found
+      ~ response.body $.items[0].name: "Ann" -> "Anne"
+      + response.headers x-ratelimit-remaining: 99
+  + #5 POST https://api.example.com/users  201 Created
+```
+
+JSON bodies are compared field by field; other bodies get a short line diff.
+Headers that change on every recording (`Date`, `ETag`, request and trace IDs,
+...) are ignored; add more with `--ignore-header`, and skip JSON keys such as
+`updated_at` with `--ignore-field`. `--exit-code` exits 1 when anything changed.
 
 ### Auditing a suite
 

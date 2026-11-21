@@ -169,7 +169,16 @@ Original scope:
 - Duplicate and oversized interactions.
 - Exit non-zero on findings so it can gate CI.
 
-### M3. Diff against git (`vcr-tui diff [REF]` + a diff view)
+### M3. Diff against git (`vcr-tui diff [REF]` + a diff view) — done
+
+`preview/diff.py` compares interactions (paired by method + URL path in order);
+`preview/git_source.py` reads the old version with `git show`. `vcr-tui diff`
+prints text or JSON, and `d` in the TUI shows the same against `HEAD`.
+Follow-ups: choose the ref from the TUI, make the ignore lists configurable in
+`vcr-tui.toml`, and jump from a change to the interaction in the browser.
+
+Original scope:
+
 
 - Pair interactions across two versions of a cassette and compare them
   semantically: status changes, JSON fields added/removed/changed, interactions
