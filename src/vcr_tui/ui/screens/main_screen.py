@@ -16,7 +16,10 @@ from textual.widgets import Footer, Header, Input
 from vcr_tui.config import Config
 from vcr_tui.preview import Interaction, PreviewEngine
 from vcr_tui.preview.audit import AuditReport, audit
+from vcr_tui.preview.diff import CassetteDiff
+from vcr_tui.preview.git_source import GitError
 from vcr_tui.ui.screens.audit_screen import AuditScreen
+from vcr_tui.ui.screens.diff_screen import DiffScreen
 from vcr_tui.ui.widgets import (
     FileListWidget,
     FileSelected,
@@ -49,6 +52,22 @@ class AuditReady(Message):
         super().__init__()
 
 
+class DiffReady(Message):
+    """Posted when the background comparison against a git ref finishes."""
+
+    def __init__(
+        self,
+        diffs: list[CassetteDiff],
+        unreadable: list[tuple[Path, str]],
+        error: str | None = None,
+    ) -> None:
+        """Carry the diffs, unparseable files, or the git error that stopped it."""
+        self.diffs = diffs
+        self.unreadable = unreadable
+        self.error = error
+        super().__init__()
+
+
 class MainScreen(Screen[None]):
     """Primary screen hosting the file, key, preview, and metadata panes."""
 
@@ -62,6 +81,7 @@ class MainScreen(Screen[None]):
         Binding('c', 'cycle_channel', 'Cycle channel'),
         Binding('v', 'toggle_view', 'Requests/raw'),
         Binding('a', 'audit', 'Audit'),
+        Binding('d', 'diff', 'Diff vs HEAD'),
     ]
 
     FILTER_INPUT_ID = 'filter-input'
@@ -228,6 +248,34 @@ class MainScreen(Screen[None]):
     def _run_audit(self) -> None:
         cassettes, unreadable = self.engine.load_cassettes(self.directory, self.channel)
         self.post_message(AuditReady(audit(cassettes, unreadable=unreadable)))
+
+    DIFF_REF = 'HEAD'
+
+    def action_diff(self) -> None:
+        """Compare changed cassettes with HEAD, off the UI thread."""
+        self.notify(f'Comparing cassettes with {self.DIFF_REF}…', timeout=2)
+        self._run_diff()
+
+    @work(thread=True, exclusive=True, group='diff')
+    def _run_diff(self) -> None:
+        try:
+            diffs, unreadable = self.engine.diff_against(
+                self.directory,
+                self.DIFF_REF,
+                self.channel,
+            )
+        except GitError as exc:
+            self.post_message(DiffReady([], [], error=str(exc)))
+            return
+        self.post_message(DiffReady(diffs, unreadable))
+
+    def on_diff_ready(self, event: DiffReady) -> None:
+        """Open the diff screen, or report why git could not be read."""
+        if event.error is not None:
+            self.notify(f'git diff failed: {event.error}', severity='error')
+            return
+        root = self.directory.resolve()
+        self.app.push_screen(DiffScreen(event.diffs, root, self.DIFF_REF, event.unreadable))
 
     def on_audit_ready(self, event: AuditReady) -> None:
         """Open the audit screen once the report is ready."""
