@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Tests for the Click CLI via click.testing.CliRunner."""
 
+import json
 import shutil
 from pathlib import Path
 
@@ -163,6 +164,63 @@ class TestInteractions:
         result = runner.invoke(main, [str(tmp_path), 'interactions', str(doc)])
         assert result.exit_code != 0
         assert 'is not a VCR cassette' in result.output
+
+
+LEAKY_CASSETTE = """\
+interactions:
+- request:
+    body: null
+    headers:
+      Authorization:
+      - Bearer live-token-123
+    method: GET
+    uri: https://api.example.com/me
+  response:
+    body:
+      string: '{"id": 1}'
+    headers: {}
+    status:
+      code: 200
+      message: OK
+version: 1
+"""
+
+
+class TestAudit:
+    def test_clean_fixture_passes(self, runner: CliRunner, workspace: Path) -> None:
+        result = runner.invoke(main, [str(workspace), 'audit'])
+        assert result.exit_code == 0
+        lines = result.output.splitlines()
+        assert lines[0] == '1 cassettes, 2 interactions, 1 hosts'
+        assert 'Findings (0 error, 0 warning, 3 info)' in lines
+        assert any('POST' in line and '201x1' in line for line in lines)
+
+    def test_unredacted_secret_fails(self, runner: CliRunner, workspace: Path) -> None:
+        leaky = workspace / 'proj' / 'cassettes' / 'leaky.yaml'
+        leaky.write_text(LEAKY_CASSETTE, encoding='utf-8')
+        result = runner.invoke(main, [str(workspace), 'audit'])
+        assert result.exit_code == 1
+        expected = str(Path('proj') / 'cassettes' / 'leaky.yaml')
+        assert f'secret-header   {expected}#0' in result.output
+
+    def test_skip_and_fail_on(self, runner: CliRunner, workspace: Path) -> None:
+        leaky = workspace / 'proj' / 'cassettes' / 'leaky.yaml'
+        leaky.write_text(LEAKY_CASSETTE, encoding='utf-8')
+        skipped = runner.invoke(main, [str(workspace), 'audit', '--skip', 'secret-header'])
+        assert skipped.exit_code == 0
+        strict = runner.invoke(
+            main,
+            [str(workspace), 'audit', '--skip', 'secret-header', '--fail-on', 'info'],
+        )
+        assert strict.exit_code == 1
+
+    def test_json_format(self, runner: CliRunner, workspace: Path) -> None:
+        result = runner.invoke(main, [str(workspace), 'audit', '--format', 'json'])
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data['interactions'] == 2
+        assert data['hosts'] == {'api.example.com': 2}
+        assert {f['code'] for f in data['findings']} == {'email'}
 
 
 class TestChannels:

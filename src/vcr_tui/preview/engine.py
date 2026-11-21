@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
+from vcr_tui.preview.audit import Cassette
 from vcr_tui.preview.cassette import Interaction, is_cassette, parse_cassette
 from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.types import PreviewResult, YAMLKey
@@ -93,6 +94,29 @@ class PreviewEngine:
         if not is_cassette(data):
             return None
         return parse_cassette(data)
+
+    def load_cassettes(
+        self,
+        directory: Path,
+        channel_name: str | None = None,
+    ) -> tuple[list[Cassette], list[tuple[Path, str]]]:
+        """Parse every discovered file that is a VCR cassette.
+
+        Returns:
+            The cassettes, plus (path, reason) for each file that failed to load.
+        """
+        cassettes: list[Cassette] = []
+        unreadable: list[tuple[Path, str]] = []
+        for path in self.discover_files(directory, channel_name):
+            try:
+                interactions = self.get_interactions(path)
+            except Exception as exc:
+                reason = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+                unreadable.append((path, reason))
+                continue
+            if interactions is not None:
+                cassettes.append(Cassette(path=path, interactions=tuple(interactions)))
+        return cassettes, unreadable
 
     def preview_key(
         self,

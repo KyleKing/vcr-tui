@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Command-line entry points for the VCR-TUI tool."""
 
+import json
 from pathlib import Path
 
 import click
@@ -10,6 +11,13 @@ from vcr_tui.app import VCRTUIApp
 from vcr_tui.config import load_config
 from vcr_tui.config.models import Config
 from vcr_tui.preview import PreviewEngine
+from vcr_tui.preview.audit import (
+    DEFAULT_MAX_BODY_BYTES,
+    AuditOptions,
+    audit as run_audit,
+    render_report,
+    report_to_dict,
+)
 from vcr_tui.preview.cassette import format_row, render_text
 
 
@@ -111,6 +119,67 @@ def interactions(ctx: click.Context, file: Path, index: int | None) -> None:
         msg = f'no interaction {index} in {file} ({len(found)} recorded)'
         raise click.ClickException(msg)
     click.echo(render_text(match))
+
+
+@main.command()
+@click.option(
+    '--format',
+    'output_format',
+    type=click.Choice(['text', 'json']),
+    default='text',
+    show_default=True,
+    help='Report format',
+)
+@click.option(
+    '--fail-on',
+    type=click.Choice(['error', 'warning', 'info', 'never']),
+    default='error',
+    show_default=True,
+    help='Exit 1 when any finding is at or above this severity',
+)
+@click.option(
+    '--skip',
+    multiple=True,
+    metavar='CODE',
+    help='Finding code to ignore, e.g. email or no-test (repeatable)',
+)
+@click.option(
+    '--max-body',
+    type=int,
+    default=DEFAULT_MAX_BODY_BYTES,
+    show_default=True,
+    help='Flag response bodies larger than this many bytes',
+)
+@click.pass_context
+def audit(
+    ctx: click.Context,
+    output_format: str,
+    fail_on: str,
+    skip: tuple[str, ...],
+    max_body: int,
+) -> None:
+    """Summarize every cassette under the directory and flag what needs review.
+
+    Reports hosts, endpoints by status code, and findings: unredacted secrets
+    (errors), cookies, oversized bodies, empty or unreadable cassettes, and
+    cassettes whose test no longer exists (warnings), plus duplicates, recorded
+    5xx responses, and email addresses (info).
+    """
+    engine: PreviewEngine = ctx.obj['engine']
+    directory: Path = ctx.obj['directory']
+    channel: str | None = ctx.obj['channel']
+
+    cassettes, unreadable = engine.load_cassettes(directory, channel)
+    options = AuditOptions(max_body_bytes=max_body, skip=frozenset(skip))
+    report = run_audit(cassettes, options, unreadable)
+
+    if output_format == 'json':
+        click.echo(json.dumps(report_to_dict(report, directory), indent=2))
+    else:
+        click.echo(render_report(report, directory))
+
+    if report.failed(fail_on):
+        ctx.exit(1)
 
 
 @main.command()
