@@ -19,6 +19,8 @@ from vcr_tui.preview.audit import (
     report_to_dict,
 )
 from vcr_tui.preview.cassette import format_row, render_text
+from vcr_tui.preview.diff import VOLATILE_HEADERS, DiffOptions, diffs_to_dict, render_diffs
+from vcr_tui.preview.git_source import GitError
 
 
 @click.group(invoke_without_command=True)
@@ -179,6 +181,69 @@ def audit_command(
         click.echo(render_report(report, directory))
 
     if report.failed(fail_on):
+        ctx.exit(1)
+
+
+@main.command(name='diff')
+@click.argument('ref', default='HEAD')
+@click.option(
+    '--ignore-header',
+    multiple=True,
+    metavar='NAME',
+    help='Header to ignore, on top of volatile ones like Date (repeatable)',
+)
+@click.option(
+    '--ignore-field',
+    multiple=True,
+    metavar='KEY',
+    help='JSON body key to ignore at any depth, e.g. updated_at (repeatable)',
+)
+@click.option(
+    '--format',
+    'output_format',
+    type=click.Choice(['text', 'json']),
+    default='text',
+    show_default=True,
+    help='Report format',
+)
+@click.option('--exit-code', is_flag=True, help='Exit 1 when any cassette changed')
+@click.pass_context
+def diff_command(
+    ctx: click.Context,
+    ref: str,
+    ignore_header: tuple[str, ...],
+    ignore_field: tuple[str, ...],
+    output_format: str,
+    exit_code: bool,  # noqa: FBT001
+) -> None:
+    """Compare cassettes under the directory with their versions at a git REF.
+
+    Interactions are paired by method and URL path, then compared on status,
+    headers, and bodies; JSON bodies are compared field by field. Untracked
+    cassettes count as added. REF defaults to HEAD, so this shows what a
+    re-recording changed before it is committed.
+    """
+    engine: PreviewEngine = ctx.obj['engine']
+    directory: Path = ctx.obj['directory']
+    channel: str | None = ctx.obj['channel']
+
+    options = DiffOptions(
+        ignore_headers=VOLATILE_HEADERS | {name.casefold() for name in ignore_header},
+        ignore_fields=frozenset(ignore_field),
+    )
+    try:
+        diffs, unreadable = engine.diff_against(directory, ref, channel, options)
+    except GitError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    for path, reason in unreadable:
+        click.echo(f'warning: could not parse {path}: {reason}', err=True)
+    if output_format == 'json':
+        click.echo(json.dumps(diffs_to_dict(diffs, directory), indent=2))
+    else:
+        click.echo(render_diffs(diffs, directory))
+
+    if exit_code and any(not d.is_empty for d in diffs):
         ctx.exit(1)
 
 
