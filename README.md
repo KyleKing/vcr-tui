@@ -53,7 +53,8 @@ In the TUI, a cassette opens as a list of its recorded requests (method,
 status, response size, URL). Highlighting one shows its request and response
 headers and decoded bodies: JSON pretty-printed, gzip/deflate and `!!binary`
 bodies decoded, form data split into pairs. `v` toggles the raw YAML key tree,
-`/` filters whichever list has focus, `c` cycles channels, and `r` rescans.
+`/` filters whichever list has focus, `a` opens the suite audit, `c` cycles
+channels, and `r` rescans.
 
 Or use the CLI subcommands for quick inspection without the TUI:
 
@@ -64,7 +65,30 @@ vcr-tui interactions cassette.yaml -i 1  # full request and response of one
 vcr-tui keys cassette.yaml               # print the YAML key structure
 vcr-tui preview cassette.yaml            # render a formatted preview
 vcr-tui channels                         # list configured preview channels
+vcr-tui audit                            # summarize and audit every cassette
 ```
+
+### Auditing a suite
+
+`vcr-tui audit [--format json] [--fail-on error|warning|info|never] [--skip CODE]`
+summarizes every cassette under the directory: calls per host, endpoints
+(with id-like path segments collapsed to `{id}`) by status code, and findings:
+
+| Severity | Code | Meaning |
+| --- | --- | --- |
+| error | `secret-header` | `Authorization`, `Cookie`, or a `*token*`/`*secret*` request header recorded unredacted |
+| error | `secret-query` | `api_key`, `access_token`, `password`, ... in the URL |
+| error | `secret-field` | a password/token/secret field in a JSON or form body |
+| error | `secret-token` | a JWT, AWS key, GitHub or Slack token, or private key in a body |
+| warning | `set-cookie` | a response sets a cookie |
+| warning | `large-body` | a response body over `--max-body` bytes (default 100 KB) |
+| warning | `empty-cassette` / `unreadable` | nothing recorded / the YAML does not parse |
+| warning | `no-test` | pytest-recording layout, but no `def test_...` matches the cassette name |
+| info | `duplicate` / `server-error` / `email` | repeated requests, recorded 5xx, email addresses |
+
+Values such as `REDACTED`, `***`, `<TOKEN>`, or `[FILTERED]` count as redacted.
+It exits 1 when any finding reaches `--fail-on` (default `error`), so it can
+gate CI.
 
 Both vcrpy/pytest-recording (`interactions:`) and Ruby VCR
 (`http_interactions:`) cassettes are recognised.

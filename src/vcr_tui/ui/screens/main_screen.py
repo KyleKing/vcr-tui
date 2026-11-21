@@ -15,6 +15,8 @@ from textual.widgets import Footer, Header, Input
 
 from vcr_tui.config import Config
 from vcr_tui.preview import Interaction, PreviewEngine
+from vcr_tui.preview.audit import AuditReport, audit
+from vcr_tui.ui.screens.audit_screen import AuditScreen
 from vcr_tui.ui.widgets import (
     FileListWidget,
     FileSelected,
@@ -38,6 +40,15 @@ class FilesDiscovered(Message):
         super().__init__()
 
 
+class AuditReady(Message):
+    """Posted when the background audit of every cassette finishes."""
+
+    def __init__(self, report: AuditReport) -> None:
+        """Carry the finished report."""
+        self.report = report
+        super().__init__()
+
+
 class MainScreen(Screen[None]):
     """Primary screen hosting the file, key, preview, and metadata panes."""
 
@@ -50,6 +61,7 @@ class MainScreen(Screen[None]):
         Binding('/', 'filter_panes', 'Filter'),
         Binding('c', 'cycle_channel', 'Cycle channel'),
         Binding('v', 'toggle_view', 'Requests/raw'),
+        Binding('a', 'audit', 'Audit'),
     ]
 
     FILTER_INPUT_ID = 'filter-input'
@@ -206,6 +218,20 @@ class MainScreen(Screen[None]):
     def _discover_files(self) -> None:
         files = self.engine.discover_files(self.directory, self.channel)
         self.post_message(FilesDiscovered(files))
+
+    def action_audit(self) -> None:
+        """Audit every cassette the current channel discovers, off the UI thread."""
+        self.notify('Auditing cassettes…', timeout=2)
+        self._run_audit()
+
+    @work(thread=True, exclusive=True, group='audit')
+    def _run_audit(self) -> None:
+        cassettes, unreadable = self.engine.load_cassettes(self.directory, self.channel)
+        self.post_message(AuditReady(audit(cassettes, unreadable=unreadable)))
+
+    def on_audit_ready(self, event: AuditReady) -> None:
+        """Open the audit screen once the report is ready."""
+        self.app.push_screen(AuditScreen(event.report, self.directory))
 
     def on_files_discovered(self, event: FilesDiscovered) -> None:
         """Populate the file list once the scan finishes."""
