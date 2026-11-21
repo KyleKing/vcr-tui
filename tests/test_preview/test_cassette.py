@@ -209,7 +209,6 @@ class TestFormatting:
         row = format_row(parse_cassette(cassette_data)[1])
         assert row.split() == ['1', 'POST', '201', '112', 'B', 'api.example.com/users']
 
-
     def test_body_summary(self):
         assert body_summary(decode_body(None)) == 'no body'
         gz = decode_body(gzip.compress(b'{}'))

@@ -351,8 +351,10 @@ def render_report(report: AuditReport, root: Path) -> str:
         The multi-line report.
     """
     lines = [
-        f'{report.cassettes} cassettes, {report.interactions} interactions, '
-        f'{len(report.hosts)} hosts',
+        (
+            f'{report.cassettes} cassettes, {report.interactions} interactions, '
+            f'{len(report.hosts)} hosts'
+        ),
     ]
     if report.hosts:
         lines.extend(('', 'Hosts'))
