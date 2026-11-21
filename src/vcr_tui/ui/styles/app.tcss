@@ -35,13 +35,13 @@ Screen {
     width: 1fr;
 }
 
-#yaml-viewer {
+#yaml-viewer, #interaction-list {
     height: 1fr;
     border: solid $secondary-background;
     background: $surface;
 }
 
-#yaml-viewer:focus {
+#yaml-viewer:focus, #interaction-list:focus {
     border: solid $secondary;
 }
 

@@ -42,7 +42,7 @@ async def _populated_app(pilot: Pilot) -> None:
 
 
 def test_main_screen_initial(snap_compare: Any) -> None:
-    """Main screen on mount: file list populated, first file's keys shown."""
+    """Main screen on mount: file list populated, first cassette's interactions shown."""
     assert snap_compare(_app(), run_before=_populated_app)
 
 
@@ -54,11 +54,12 @@ async def test_main_screen_preview_response_body() -> None:
     """
     app = _app()
     async with app.run_test() as pilot:
-        # Focus order: file-list -> yaml-viewer (filter-input is third). The
-        # key list starts with nothing highlighted, so the first j selects
-        # index 0 and n presses land on index n-1: 14 reaches key 13,
+        # `v` switches the cassette from its interaction list to the raw key
+        # tree. Focus order is then file-list -> yaml-viewer (filter-input is
+        # third). The key list starts with nothing highlighted, so the first j
+        # selects index 0 and n presses land on index n-1: 14 reaches key 13,
         # interactions[0].response.body.string.
-        await pilot.press('tab', *['j'] * 14, 'enter')
+        await pilot.press('v', 'tab', *['j'] * 14, 'enter')
 
         panel = app.screen.query_one('#preview-panel', PreviewPanelWidget)
         content = panel.content
@@ -75,9 +76,10 @@ async def test_main_screen_metadata_bar_populated() -> None:
     """
     app = _app()
     async with app.run_test() as pilot:
-        # 35 presses reach key 34, interactions[1].response.body.string, whose
-        # metadata comes from the second interaction (POST /users).
-        await pilot.press('tab', *['j'] * 35, 'enter')
+        # In the raw key view, 35 presses reach key 34,
+        # interactions[1].response.body.string, whose metadata comes from the
+        # second interaction (POST /users).
+        await pilot.press('v', 'tab', *['j'] * 35, 'enter')
 
         bar = app.screen.query_one('#metadata-bar', MetadataBarWidget)
         text = bar.content
