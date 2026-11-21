@@ -5,6 +5,7 @@
 import shutil
 import subprocess  # noqa: S404
 from dataclasses import dataclass
+from itertools import starmap
 from pathlib import Path
 from typing import Literal
 
@@ -87,7 +88,7 @@ def changed_files(directory: Path, ref: str) -> list[ChangedFile]:
         if name:
             found.setdefault(root / name, 'added')
 
-    return [ChangedFile(path, status) for path, status in sorted(found.items())]
+    return list(starmap(ChangedFile, sorted(found.items())))
 
 
 def read_at_ref(root: Path, path: Path, ref: str) -> str:
