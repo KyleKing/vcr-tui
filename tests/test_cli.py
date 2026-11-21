@@ -126,6 +126,45 @@ class TestPreview:
         assert result.exit_code != 0
 
 
+class TestInteractions:
+    @pytest.fixture
+    def cassette(self, workspace: Path) -> Path:
+        return workspace / 'proj' / 'cassettes' / 'example_api.yaml'
+
+    def test_lists_one_row_per_interaction(self, runner: CliRunner, cassette: Path) -> None:
+        result = runner.invoke(main, [str(cassette.parent), 'interactions', str(cassette)])
+        assert result.exit_code == 0
+        rows = [line.split() for line in result.output.splitlines()]
+        assert [row[:3] for row in rows] == [['0', 'GET', '200'], ['1', 'POST', '201']]
+        assert rows[0][-1] == 'api.example.com/users/1'
+
+    def test_index_prints_request_and_response(self, runner: CliRunner, cassette: Path) -> None:
+        result = runner.invoke(
+            main,
+            [str(cassette.parent), 'interactions', str(cassette), '--index', '1'],
+        )
+        assert result.exit_code == 0
+        assert result.output.startswith('POST https://api.example.com/users\n-> 201 Created')
+        assert '== Request (json, 49 B) ==' in result.output
+        assert '"created_at": "2024-01-15T10:30:00Z"' in result.output
+
+    def test_unknown_index_fails(self, runner: CliRunner, cassette: Path) -> None:
+        result = runner.invoke(
+            main,
+            [str(cassette.parent), 'interactions', str(cassette), '-i', '9'],
+        )
+        assert result.exit_code != 0
+        assert 'no interaction 9' in result.output
+        assert '(2 recorded)' in result.output
+
+    def test_non_cassette_fails(self, runner: CliRunner, tmp_path: Path) -> None:
+        doc = tmp_path / 'doc.yaml'
+        doc.write_text('key: value\n', encoding='utf-8')
+        result = runner.invoke(main, [str(tmp_path), 'interactions', str(doc)])
+        assert result.exit_code != 0
+        assert 'is not a VCR cassette' in result.output
+
+
 class TestChannels:
     def test_lists_default_channels(self, runner: CliRunner, tmp_path: Path) -> None:
         result = runner.invoke(main, [str(tmp_path), 'channels'])

@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
+from vcr_tui.preview.cassette import Interaction, is_cassette, parse_cassette
 from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.types import PreviewResult, YAMLKey
 from vcr_tui.preview.yaml_parser import get_value_at_path, get_yaml_keys, load_yaml
@@ -80,6 +81,18 @@ class PreviewEngine:
             The YAML keys.
         """
         return get_yaml_keys(file_path)
+
+    @staticmethod
+    def get_interactions(file_path: Path) -> list[Interaction] | None:
+        """Parse the file's recorded HTTP interactions.
+
+        Returns:
+            The interactions, or None when the file is not a VCR cassette.
+        """
+        data = load_yaml(file_path)
+        if not is_cassette(data):
+            return None
+        return parse_cassette(data)
 
     def preview_key(
         self,
