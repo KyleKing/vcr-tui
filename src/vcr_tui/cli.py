@@ -11,6 +11,7 @@ from vcr_tui.app import VCRTUIApp
 from vcr_tui.config import load_config
 from vcr_tui.config.models import Config
 from vcr_tui.preview import PreviewEngine
+from vcr_tui.preview.amber import format_snapshot_row
 from vcr_tui.preview.audit import (
     DEFAULT_MAX_BODY_BYTES,
     AuditOptions,
@@ -121,6 +122,31 @@ def interactions(ctx: click.Context, file: Path, index: int | None) -> None:
         msg = f'no interaction {index} in {file} ({len(found)} recorded)'
         raise click.ClickException(msg)
     click.echo(render_text(match))
+
+
+@main.command()
+@click.argument('file', type=click.Path(exists=True, dir_okay=False, path_type=Path))
+@click.option('--name', '-n', help='Print the body of the snapshot with this exact name')
+@click.pass_context
+def snapshots(ctx: click.Context, file: Path, name: str | None) -> None:
+    """List the snapshots in a syrupy .ambr file, or print one by name."""
+    engine: PreviewEngine = ctx.obj['engine']
+
+    found = engine.get_snapshots(file)
+    if found is None:
+        msg = f'{file} is not a syrupy .ambr file'
+        raise click.ClickException(msg)
+
+    if name is None:
+        for snapshot in found:
+            click.echo(format_snapshot_row(snapshot))
+        return
+
+    match = next((s for s in found if s.name == name), None)
+    if match is None:
+        msg = f'no snapshot named {name!r} in {file} ({len(found)} recorded)'
+        raise click.ClickException(msg)
+    click.echo(match.body)
 
 
 @main.command(name='audit')

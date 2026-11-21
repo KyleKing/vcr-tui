@@ -166,6 +166,41 @@ class TestInteractions:
         assert 'is not a VCR cassette' in result.output
 
 
+AMBER = REPO_ROOT / 'fixtures' / 'snapshots' / '__snapshots__' / 'test_example.ambr'
+
+
+class TestSnapshots:
+    def test_lists_rows(self, runner: CliRunner, tmp_path: Path) -> None:
+        result = runner.invoke(main, [str(tmp_path), 'snapshots', str(AMBER)])
+        assert result.exit_code == 0
+        rows = [line.split() for line in result.output.splitlines()]
+        assert [row[-1] for row in rows] == [
+            'TestUsers.test_get[admin]',
+            'test_greeting',
+            'test_report',
+        ]
+        assert rows[0][:2] == ['0', 'dict']
+
+    def test_prints_one_body(self, runner: CliRunner, tmp_path: Path) -> None:
+        result = runner.invoke(
+            main,
+            [str(tmp_path), 'snapshots', str(AMBER), '--name', 'test_greeting'],
+        )
+        assert result.exit_code == 0
+        assert result.output == "'Hello, Ann!'\n"
+
+    def test_unknown_name_fails(self, runner: CliRunner, tmp_path: Path) -> None:
+        result = runner.invoke(main, [str(tmp_path), 'snapshots', str(AMBER), '-n', 'nope'])
+        assert result.exit_code != 0
+        assert "no snapshot named 'nope'" in result.output
+
+    def test_non_amber_fails(self, runner: CliRunner, workspace: Path) -> None:
+        cassette = workspace / 'proj' / 'cassettes' / 'example_api.yaml'
+        result = runner.invoke(main, [str(workspace), 'snapshots', str(cassette)])
+        assert result.exit_code != 0
+        assert 'is not a syrupy .ambr file' in result.output
+
+
 LEAKY_CASSETTE = """\
 interactions:
 - request:

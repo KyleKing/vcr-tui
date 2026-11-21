@@ -19,6 +19,7 @@ LEXER_MAP = {
     'xml': 'xml',
     'text': 'text',
     'toml': 'toml',
+    'python': 'python',
 }
 
 _STATUS_STYLES = (

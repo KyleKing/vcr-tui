@@ -186,7 +186,17 @@ Original scope:
 - Ignore volatile headers and fields (`Date`, request IDs, timestamps) via
   config, so the diff shows what a reviewer cares about.
 
-### M4. More snapshot formats
+### M4. More snapshot formats — syrupy done
+
+`preview/amber.py` parses `.ambr` files; the `syrupy` channel lists their
+snapshots in the TUI (`c` to switch), `vcr-tui snapshots FILE [-n NAME]` prints
+them, and `vcr-tui diff` / `d` pair snapshots by name and line-diff changed
+bodies. With no `-c`, diff now covers every enabled channel. Follow-ups: a
+`no-test` audit check for snapshots whose test is gone, structural (not line)
+diffs for `dict(...)` bodies, and the remaining formats below.
+
+Original scope:
+
 
 Replace glob-only channels with format adapters that turn a file into records.
 Priority, from what this project's own users produce:

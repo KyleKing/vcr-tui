@@ -28,7 +28,7 @@ def test_render_diff_report() -> None:
 
     text = _plain(render_diff_report([diff], root, 'main', [(root / 'bad.yaml', 'oops')]))
 
-    assert '1 cassette(s) changed since main' in text
+    assert '1 file(s) changed since main' in text
     assert 'could not parse bad.yaml: oops' in text
     assert 'c.yaml (modified): 1 changed, 0 added, 1 removed, 0 unchanged' in text
     assert '~ #0 GET https://api.test/users/1' in text
@@ -70,7 +70,7 @@ async def test_d_opens_diff_and_escape_returns(tmp_path: Path) -> None:
 
         screen = pilot.app.screen
         assert isinstance(screen, DiffScreen)
-        assert screen.sub_title == 'diff vs HEAD: 1 cassette(s) changed'
+        assert screen.sub_title == 'diff vs HEAD: 1 file(s) changed'
         assert [d.path.name for d in screen.diffs] == ['api.yaml']
 
         await pilot.press('escape')

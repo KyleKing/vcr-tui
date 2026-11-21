@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Any
 
 from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
+from vcr_tui.preview.amber import AmberSnapshot, is_amber_path, parse_amber
 from vcr_tui.preview.audit import Cassette
 from vcr_tui.preview.cassette import Interaction, is_cassette, parse_cassette
-from vcr_tui.preview.diff import CassetteDiff, DiffOptions, diff_cassette
+from vcr_tui.preview.diff import DiffOptions, FileDiff, diff_cassette, diff_snapshots
 from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.git_source import ChangedFile, changed_files, read_at_ref, repo_root
 from vcr_tui.preview.types import PreviewResult, YAMLKey
@@ -75,8 +76,11 @@ class PreviewEngine:
         ref: str,
         channel_name: str | None = None,
         options: DiffOptions | None = None,
-    ) -> tuple[list[CassetteDiff], list[tuple[Path, str]]]:
-        """Compare each changed cassette under the directory with its version at the ref.
+    ) -> tuple[list[FileDiff], list[tuple[Path, str]]]:
+        """Compare each changed cassette or amber file with its version at the ref.
+
+        With no channel named, a file counts when any enabled channel matches it;
+        YAML and JSON files that are not cassettes are skipped either way.
 
         Returns:
             The diffs (files with no reviewable change included, as empty diffs),
@@ -84,21 +88,33 @@ class PreviewEngine:
         """
         directory = directory.resolve()
         root = repo_root(directory)
-        diffs: list[CassetteDiff] = []
+        enabled = [c.name for c in self.config.channels if c.enabled]
+        names = [channel_name] if channel_name else enabled
+        diffs: list[FileDiff] = []
         unreadable: list[tuple[Path, str]] = []
         for changed in changed_files(directory, ref):
-            if not self.matches_channel(changed.path, directory, channel_name):
+            if not any(self.matches_channel(changed.path, directory, n) for n in names):
                 continue
             try:
-                old, new = _load_versions(root, changed, ref)
+                diff = _diff_file(root, changed, ref, options)
             except Exception as exc:
                 reason = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
                 unreadable.append((changed.path, reason))
                 continue
-            if old is None and new is None:
-                continue
-            diffs.append(diff_cassette(changed.path, old, new, options))
+            if diff is not None:
+                diffs.append(diff)
         return diffs, unreadable
+
+    @staticmethod
+    def get_snapshots(file_path: Path) -> list[AmberSnapshot] | None:
+        """Parse a syrupy amber file's snapshots.
+
+        Returns:
+            The snapshots, or None when the file is not an amber file.
+        """
+        if not is_amber_path(file_path):
+            return None
+        return parse_amber(file_path.read_text(encoding='utf-8'))
 
     def _should_include(self, path: Path, directory: Path, pattern: str) -> bool:
         rel_path = path.relative_to(directory)
@@ -162,6 +178,8 @@ class PreviewEngine:
         cassettes: list[Cassette] = []
         unreadable: list[tuple[Path, str]] = []
         for path in self.discover_files(directory, channel_name):
+            if is_amber_path(path):
+                continue
             try:
                 interactions = self.get_interactions(path)
             except Exception as exc:
@@ -313,16 +331,23 @@ def _cassette_or_none(data: object) -> list[Interaction] | None:
     return parse_cassette(data) if is_cassette(data) else None
 
 
-def _load_versions(
+def _diff_file(
     root: Path,
     changed: ChangedFile,
     ref: str,
-) -> tuple[list[Interaction] | None, list[Interaction] | None]:
-    """Parse a changed file at the ref and in the working tree; None where absent or no cassette."""
-    old = None
-    if changed.status != 'added':
-        old = _cassette_or_none(load_yaml_text(read_at_ref(root, changed.path, ref)))
-    new = None
-    if changed.status != 'deleted':
-        new = _cassette_or_none(load_yaml(changed.path))
-    return old, new
+    options: DiffOptions | None,
+) -> FileDiff | None:
+    """Diff a changed file's ref and working-tree versions; None when it is no cassette."""
+    old_text = read_at_ref(root, changed.path, ref) if changed.status != 'added' else None
+    new_text = (
+        changed.path.read_text(encoding='utf-8') if changed.status != 'deleted' else None
+    )
+    if is_amber_path(changed.path):
+        old_snaps = parse_amber(old_text) if old_text is not None else None
+        new_snaps = parse_amber(new_text) if new_text is not None else None
+        return diff_snapshots(changed.path, old_snaps, new_snaps, options)
+    old = _cassette_or_none(load_yaml_text(old_text)) if old_text is not None else None
+    new = _cassette_or_none(load_yaml_text(new_text)) if new_text is not None else None
+    if old is None and new is None:
+        return None
+    return diff_cassette(changed.path, old, new, options)

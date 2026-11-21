@@ -14,9 +14,10 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header, Input
 
 from vcr_tui.config import Config
-from vcr_tui.preview import Interaction, PreviewEngine
+from vcr_tui.preview import Interaction, PreviewEngine, PreviewResult
+from vcr_tui.preview.amber import AmberSnapshot
 from vcr_tui.preview.audit import AuditReport, audit
-from vcr_tui.preview.diff import CassetteDiff
+from vcr_tui.preview.diff import FileDiff
 from vcr_tui.preview.git_source import GitError
 from vcr_tui.ui.screens.audit_screen import AuditScreen
 from vcr_tui.ui.screens.diff_screen import DiffScreen
@@ -28,6 +29,8 @@ from vcr_tui.ui.widgets import (
     KeySelected,
     MetadataBarWidget,
     PreviewPanelWidget,
+    SnapshotListWidget,
+    SnapshotSelected,
     YAMLViewerWidget,
 )
 
@@ -57,7 +60,7 @@ class DiffReady(Message):
 
     def __init__(
         self,
-        diffs: list[CassetteDiff],
+        diffs: list[FileDiff],
         unreadable: list[tuple[Path, str]],
         error: str | None = None,
     ) -> None:
@@ -89,6 +92,7 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
     FILES_PANE = 'files'
     KEYS_PANE = 'keys'
     INTERACTIONS_PANE = 'interactions'
+    SNAPSHOTS_PANE = 'snapshots'
 
     def __init__(
         self,
@@ -105,6 +109,7 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
         self._current_file: Path | None = None
         self._filter_target: str = self.FILES_PANE
         self._interactions: list[Interaction] | None = None
+        self._snapshots: list[AmberSnapshot] | None = None
         self._raw_view = False
 
     @property
@@ -125,6 +130,7 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
                 yield FileListWidget(id='file-list')
             with Vertical(id='content-container'):
                 yield InteractionListWidget(id='interaction-list')
+                yield SnapshotListWidget(id='snapshot-list')
                 yield YAMLViewerWidget(id='yaml-viewer')
                 yield PreviewPanelWidget(id='preview-panel')
                 yield MetadataBarWidget(id='metadata-bar')
@@ -176,23 +182,32 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
         self.query_one('#metadata-bar', MetadataBarWidget).clear_metadata()
 
     def _sync_view(self) -> None:
-        """Show whichever of the interaction list and key tree applies, keeping focus visible."""
+        """Show the snapshot list, interaction list, or key tree, keeping focus visible."""
         interaction_list = self.query_one('#interaction-list', InteractionListWidget)
+        snapshot_list = self.query_one('#snapshot-list', SnapshotListWidget)
         yaml_viewer = self.query_one('#yaml-viewer', YAMLViewerWidget)
+        show_snapshots = self._snapshots is not None
         show_interactions = self.showing_interactions
         interaction_list.display = show_interactions
-        yaml_viewer.display = not show_interactions
-        if self.focused in {interaction_list, yaml_viewer}:
-            (interaction_list if show_interactions else yaml_viewer).focus()
+        snapshot_list.display = show_snapshots
+        yaml_viewer.display = not (show_interactions or show_snapshots)
+        if self.focused in {interaction_list, snapshot_list, yaml_viewer}:
+            visible = interaction_list if show_interactions else yaml_viewer
+            (snapshot_list if show_snapshots else visible).focus()
 
     def action_filter_panes(self) -> None:
         """Focus the filter input, aimed at whichever pane currently has focus."""
         focused_id = self.focused.id if self.focused is not None else None
-        targets = {'yaml-viewer': self.KEYS_PANE, 'interaction-list': self.INTERACTIONS_PANE}
+        targets = {
+            'yaml-viewer': self.KEYS_PANE,
+            'interaction-list': self.INTERACTIONS_PANE,
+            'snapshot-list': self.SNAPSHOTS_PANE,
+        }
         self._filter_target = targets.get(focused_id or '', self.FILES_PANE)
         placeholders = {
             self.KEYS_PANE: 'Filter YAML keys…',
             self.INTERACTIONS_PANE: 'Filter requests…',
+            self.SNAPSHOTS_PANE: 'Filter snapshots…',
         }
         filter_input = self.query_one(f'#{self.FILTER_INPUT_ID}', Input)
         filter_input.placeholder = placeholders.get(self._filter_target, 'Filter files…')
@@ -219,11 +234,15 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
             event.stop()
             self._clear_filter()
 
-    def _filtered_pane(self) -> FileListWidget | YAMLViewerWidget | InteractionListWidget:
+    def _filtered_pane(
+        self,
+    ) -> FileListWidget | YAMLViewerWidget | InteractionListWidget | SnapshotListWidget:
         if self._filter_target == self.KEYS_PANE:
             return self.query_one('#yaml-viewer', YAMLViewerWidget)
         if self._filter_target == self.INTERACTIONS_PANE:
             return self.query_one('#interaction-list', InteractionListWidget)
+        if self._filter_target == self.SNAPSHOTS_PANE:
+            return self.query_one('#snapshot-list', SnapshotListWidget)
         return self.query_one('#file-list', FileListWidget)
 
     def _set_filter(self, value: str | None) -> None:
@@ -291,6 +310,7 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
         if not files:
             self._current_file = None
             self._interactions = None
+            self._snapshots = None
             self._sync_view()
             return
 
@@ -301,10 +321,17 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
         self._load_keys(selected)
 
     def _load_keys(self, file_path: Path) -> None:
-        keys = self.engine.get_keys(file_path)
         yaml_viewer = self.query_one('#yaml-viewer', YAMLViewerWidget)
-        yaml_viewer.set_keys(keys)
+        self._snapshots = self.engine.get_snapshots(file_path)
+        snapshot_list = self.query_one('#snapshot-list', SnapshotListWidget)
+        snapshot_list.set_snapshots(self._snapshots or [])
+        if self._snapshots is not None:
+            self._interactions = None
+            yaml_viewer.set_keys([])
+            self._sync_view()
+            return
 
+        yaml_viewer.set_keys(self.engine.get_keys(file_path))
         self._interactions = self.engine.get_interactions(file_path)
         interaction_list = self.query_one('#interaction-list', InteractionListWidget)
         interaction_list.set_interactions(self._interactions or [])
@@ -346,6 +373,24 @@ class MainScreen(Screen[None]):  # noqa: PLR0904
             'status.code': interaction.status_code,
             'request.method': interaction.method,
             'request.uri': interaction.uri,
+        }
+        self.query_one('#metadata-bar', MetadataBarWidget).set_metadata(metadata)
+
+    def on_snapshot_selected(self, event: SnapshotSelected) -> None:
+        """Preview the highlighted snapshot's body."""
+        snapshot = event.snapshot
+        result = PreviewResult(
+            content=snapshot.body,
+            formatter='python',
+            metadata={},
+            source_path=snapshot.name,
+            label=snapshot.name,
+        )
+        self.query_one('#preview-panel', PreviewPanelWidget).set_preview(result)
+        metadata = {
+            'snapshot': f'{snapshot.index + 1}/{len(self._snapshots or [])}',
+            'name': snapshot.name,
+            'line': snapshot.line,
         }
         self.query_one('#metadata-bar', MetadataBarWidget).set_metadata(metadata)
 

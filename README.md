@@ -67,12 +67,21 @@ vcr-tui preview cassette.yaml            # render a formatted preview
 vcr-tui channels                         # list configured preview channels
 vcr-tui audit                            # summarize and audit every cassette
 vcr-tui diff [REF]                       # what changed in each cassette since REF
+vcr-tui snapshots test_x.ambr [-n NAME]  # list syrupy snapshots, or print one
 ```
+
+### Syrupy snapshots
+
+The built-in `syrupy` channel (`c` to switch, or `-c syrupy`) finds
+`__snapshots__/*.ambr` files. Each opens as a list of named snapshots with their
+type and size, and highlighting one shows its body. `vcr-tui diff` covers them
+too: snapshots are paired by name and each changed body gets a line diff, so a
+`--snapshot-update` run reads as which snapshots changed and how.
 
 ### Reviewing re-recorded cassettes
 
 `vcr-tui [DIR] diff [REF] [--ignore-header NAME] [--ignore-field KEY] [--format json] [--exit-code]`
-compares every changed cassette under the directory with its version at `REF`
+compares every changed cassette (and syrupy `.ambr` file) under the directory with its version at `REF`
 (default `HEAD`, so it shows a re-recording before you commit it; untracked
 cassettes count as added). Interactions are paired by method and URL path in
 recorded order, then compared on status, headers, and bodies:

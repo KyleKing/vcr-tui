@@ -211,6 +211,13 @@ async def test_cycle_channel_switches_discovery(tmp_path: Path) -> None:
         # both channels match.
         assert file_list.highlighted == names.index('example_api.yaml')
 
+        # The syrupy channel only matches __snapshots__/*.ambr, so nothing here.
+        await pilot.press('c')
+        await pilot.app.workers.wait_for_complete()
+        await pilot.pause()
+        assert screen.channel == 'syrupy'
+        assert file_list._files == []
+
         # Cycling wraps back to the first enabled channel.
         await pilot.press('c')
         await pilot.app.workers.wait_for_complete()

@@ -16,13 +16,13 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
 from vcr_tui.preview.cassette import Interaction
-from vcr_tui.preview.diff import CassetteDiff, Change, describe_change
+from vcr_tui.preview.diff import Change, FileDiff, SnapshotDiff, describe_change
 
 KIND_STYLES = {'added': 'green', 'removed': 'red', 'changed': 'yellow'}
 
 
 def render_diff_report(
-    diffs: Sequence[CassetteDiff],
+    diffs: Sequence[FileDiff],
     root: Path,
     ref: str,
     unreadable: Sequence[tuple[Path, str]] = (),
@@ -34,7 +34,7 @@ def render_diff_report(
     """
     shown = [d for d in diffs if not d.is_empty]
     parts: list[RenderableType] = [
-        Text(f'{len(shown)} cassette(s) changed since {ref}', style='bold'),
+        Text(f'{len(shown)} file(s) changed since {ref}', style='bold'),
     ]
     parts.extend(
         Text(f'could not parse {_relative(path, root)}: {reason}', style='red')
@@ -46,6 +46,9 @@ def render_diff_report(
             f'{len(diff.added)} added, {len(diff.removed)} removed, {diff.unchanged} unchanged'
         )
         parts.append(Rule(heading, align='left', style='dim'))
+        if isinstance(diff, SnapshotDiff):
+            parts.extend(_snapshot_parts(diff))
+            continue
         for item in diff.changed:
             moved = f'  (was #{item.old.index})' if item.old.index != item.new.index else ''
             parts.append(Text(f'~ {_summary(item.new)}{moved}', style='bold yellow'))
@@ -57,6 +60,24 @@ def render_diff_report(
     return Group(*parts)
 
 
+def _snapshot_parts(diff: SnapshotDiff) -> list[RenderableType]:
+    parts: list[RenderableType] = []
+    for change in diff.changed:
+        text = Text(f'~ {change.name}', style='bold yellow')
+        for line in change.lines:
+            text.append(f'\n    {line}', style=_line_style(line))
+        parts.append(text)
+    parts.extend(Text(f'+ {name}', style='bold green') for name in diff.added)
+    parts.extend(Text(f'- {name}', style='bold red') for name in diff.removed)
+    return parts
+
+
+def _line_style(line: str) -> str:
+    if line.startswith('+'):
+        return 'green'
+    return 'red' if line.startswith('-') else 'dim'
+
+
 def _summary(interaction: Interaction) -> str:
     return f'#{interaction.index} {interaction.method} {interaction.uri}'
 
@@ -64,8 +85,7 @@ def _summary(interaction: Interaction) -> str:
 def _change_lines(change: Change) -> Text:
     text = Text(f'    {describe_change(change)}', style=KIND_STYLES[change.kind])
     for line in change.lines:
-        style = 'green' if line.startswith('+') else 'red' if line.startswith('-') else 'dim'
-        text.append(f'\n      {line}', style=style)
+        text.append(f'\n      {line}', style=_line_style(line))
     return text
 
 
@@ -86,7 +106,7 @@ class DiffScreen(Screen[None]):
 
     def __init__(
         self,
-        diffs: Sequence[CassetteDiff],
+        diffs: Sequence[FileDiff],
         root: Path,
         ref: str,
         unreadable: Sequence[tuple[Path, str]] = (),
@@ -113,5 +133,5 @@ class DiffScreen(Screen[None]):
     def on_mount(self) -> None:
         """Title the screen with the ref and focus the scroll area."""
         changed = sum(1 for d in self.diffs if not d.is_empty)
-        self.sub_title = f'diff vs {self.ref}: {changed} cassette(s) changed'
+        self.sub_title = f'diff vs {self.ref}: {changed} file(s) changed'
         self.query_one('#diff-scroll').focus()
