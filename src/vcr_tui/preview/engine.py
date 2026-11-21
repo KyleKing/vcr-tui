@@ -9,9 +9,16 @@ from typing import Any
 from vcr_tui.config.models import Channel, Config, ExtractionRule, FormatterType
 from vcr_tui.preview.audit import Cassette
 from vcr_tui.preview.cassette import Interaction, is_cassette, parse_cassette
+from vcr_tui.preview.diff import CassetteDiff, DiffOptions, diff_cassette
+from vcr_tui.preview.git_source import changed_files, read_at_ref, repo_root
 from vcr_tui.preview.formatters import format_content
 from vcr_tui.preview.types import PreviewResult, YAMLKey
-from vcr_tui.preview.yaml_parser import get_value_at_path, get_yaml_keys, load_yaml
+from vcr_tui.preview.yaml_parser import (
+    get_value_at_path,
+    get_yaml_keys,
+    load_yaml,
+    load_yaml_text,
+)
 
 EXCLUDED_DIRS = frozenset({'.git', '.venv', 'venv', 'node_modules', '__pycache__', '.tox'})
 
@@ -45,6 +52,58 @@ class PreviewEngine:
                     break
 
         return sorted(set(files), key=lambda p: p.name)
+
+    def matches_channel(
+        self,
+        path: Path,
+        directory: Path,
+        channel_name: str | None = None,
+    ) -> bool:
+        """Whether a path under the directory matches the channel's patterns.
+
+        Unlike discover_files, the file need not exist, so a deleted cassette
+        can still be recognised.
+        """
+        channel = self.config.get_channel(channel_name)
+        if not channel:
+            return False
+        return any(self._should_include(path, directory, p) for p in channel.glob_patterns)
+
+    def diff_against(
+        self,
+        directory: Path,
+        ref: str,
+        channel_name: str | None = None,
+        options: DiffOptions | None = None,
+    ) -> tuple[list[CassetteDiff], list[tuple[Path, str]]]:
+        """Compare each changed cassette under the directory with its version at the ref.
+
+        Returns:
+            The diffs (files with no reviewable change included, as empty diffs),
+            plus (path, reason) for each changed file that failed to parse.
+        """
+        directory = directory.resolve()
+        root = repo_root(directory)
+        diffs: list[CassetteDiff] = []
+        unreadable: list[tuple[Path, str]] = []
+        for changed in changed_files(directory, ref):
+            if not self.matches_channel(changed.path, directory, channel_name):
+                continue
+            try:
+                old = None
+                if changed.status != 'added':
+                    old = _cassette_or_none(load_yaml_text(read_at_ref(root, changed.path, ref)))
+                new = None
+                if changed.status != 'deleted':
+                    new = _cassette_or_none(load_yaml(changed.path))
+            except Exception as exc:
+                reason = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+                unreadable.append((changed.path, reason))
+                continue
+            if old is None and new is None:
+                continue
+            diffs.append(diff_cassette(changed.path, old, new, options))
+        return diffs, unreadable
 
     def _should_include(self, path: Path, directory: Path, pattern: str) -> bool:
         rel_path = path.relative_to(directory)
@@ -253,3 +312,7 @@ class PreviewEngine:
             yield current
             parts = current.rsplit('.', 1)
             current = parts[0] if len(parts) > 1 else ''
+
+
+def _cassette_or_none(data: object) -> list[Interaction] | None:
+    return parse_cassette(data) if is_cassette(data) else None

@@ -18,6 +18,11 @@ def load_yaml(file_path: Path) -> Any:
         return _yaml.load(f)
 
 
+def load_yaml_text(text: str) -> Any:
+    """Load a YAML document from a string, such as a file's content at a git ref."""
+    return _yaml.load(text)
+
+
 def _extract_keys(data: Any, prefix: str = '', depth: int = 0) -> list[YAMLKey]:
     keys: list[YAMLKey] = []
 
