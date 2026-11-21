@@ -150,7 +150,16 @@ lives in `preview/` (no UI imports) so it is testable without the TUI.
   load once if large cassettes feel slow. Query parameters are parsed
   (`Interaction.query`) but not yet shown as their own section.
 
-### M2. Suite overview and audit (`vcr-tui audit` + a summary screen)
+### M2. Suite overview and audit (`vcr-tui audit` + a summary screen) — done
+
+`preview/audit.py` builds the report; `vcr-tui audit` prints it (text or JSON,
+exit 1 at `--fail-on`), and `a` in the TUI opens it. The README lists the
+finding codes. Follow-ups: make redaction markers and the sensitive-name lists
+configurable in `vcr-tui.toml`, and let the audit screen jump to a finding's
+interaction.
+
+Original scope:
+
 
 - Endpoint x status matrix across every cassette, request counts per host.
 - Cassettes with no matching test (pytest-recording's

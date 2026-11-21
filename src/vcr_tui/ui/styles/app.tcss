@@ -60,3 +60,8 @@ Screen {
     padding: 0 1;
     content-align: left middle;
 }
+
+#audit-scroll {
+    height: 1fr;
+    padding: 0 1;
+}
