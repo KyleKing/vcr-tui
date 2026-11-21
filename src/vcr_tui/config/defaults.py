@@ -5,7 +5,7 @@ from vcr_tui.config.models import Channel, Config, ExtractionRule
 
 
 def get_default_config() -> Config:
-    """Return the default vcr, json, and yaml channels used when no config exists."""
+    """Return the default vcr, json, yaml, and syrupy channels used when no config exists."""
     return Config(
         root=False,
         channels=(
@@ -53,6 +53,11 @@ def get_default_config() -> Config:
                         label='Full YAML',
                     ),
                 ),
+            ),
+            Channel(
+                name='syrupy',
+                glob_patterns=('**/__snapshots__/*.ambr', '**/__snapshots__/**/*.ambr'),
+                extraction_rules=(),
             ),
         ),
         default_channel='vcr',

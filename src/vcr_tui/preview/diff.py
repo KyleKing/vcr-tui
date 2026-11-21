@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit, urlunsplit
 
+from vcr_tui.preview.amber import AmberSnapshot
 from vcr_tui.preview.cassette import Body, HttpMessage, Interaction
 
 ChangeKind = Literal['added', 'removed', 'changed']
@@ -96,6 +97,73 @@ class CassetteDiff:
     def is_empty(self) -> bool:
         """Whether nothing a reviewer would care about changed."""
         return not (self.added or self.removed or self.changed)
+
+
+@dataclass(frozen=True)
+class SnapshotChange:
+    """A syrupy snapshot whose body changed, with its unified-diff lines."""
+
+    name: str
+    lines: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SnapshotDiff:
+    """Everything that changed in one amber snapshot file, by snapshot name."""
+
+    path: Path
+    status: FileStatus
+    added: tuple[str, ...] = ()
+    removed: tuple[str, ...] = ()
+    changed: tuple[SnapshotChange, ...] = ()
+    unchanged: int = 0
+
+    @property
+    def is_empty(self) -> bool:
+        """Whether no snapshot was added, removed, or changed."""
+        return not (self.added or self.removed or self.changed)
+
+
+FileDiff = CassetteDiff | SnapshotDiff
+
+
+def diff_snapshots(
+    path: Path,
+    old: Sequence[AmberSnapshot] | None,
+    new: Sequence[AmberSnapshot] | None,
+    options: DiffOptions | None = None,
+) -> SnapshotDiff:
+    """Compare two versions of an amber file, pairing snapshots by name.
+
+    Returns:
+        Added and removed names in file order, and a line diff per changed body.
+    """
+    options = options or DiffOptions()
+    if old is None:
+        return SnapshotDiff(path, 'added', added=tuple(s.name for s in new or ()))
+    if new is None:
+        return SnapshotDiff(path, 'deleted', removed=tuple(s.name for s in old))
+    before = {s.name: s for s in old}
+    after_names = {s.name for s in new}
+    changed: list[SnapshotChange] = []
+    unchanged = 0
+    for snapshot in new:
+        previous = before.get(snapshot.name)
+        if previous is None:
+            continue
+        if previous.body == snapshot.body:
+            unchanged += 1
+        else:
+            lines = _text_diff(previous.body, snapshot.body, options)
+            changed.append(SnapshotChange(snapshot.name, lines))
+    return SnapshotDiff(
+        path,
+        'modified',
+        added=tuple(s.name for s in new if s.name not in before),
+        removed=tuple(s.name for s in old if s.name not in after_names),
+        changed=tuple(changed),
+        unchanged=unchanged,
+    )
 
 
 def diff_cassette(
@@ -310,8 +378,8 @@ def describe_change(change: Change) -> str:
     return f'~ {target}: {change.before} -> {change.after}'
 
 
-def render_diffs(diffs: Sequence[CassetteDiff], root: Path) -> str:
-    """Render cassette diffs as plain text for the CLI.
+def render_diffs(diffs: Sequence[FileDiff], root: Path) -> str:
+    """Render cassette and snapshot diffs as plain text for the CLI.
 
     Returns:
         The multi-line report, or a one-line note when nothing changed.
@@ -322,11 +390,11 @@ def render_diffs(diffs: Sequence[CassetteDiff], root: Path) -> str:
     lines: list[str] = []
     for diff in shown:
         lines.extend((_file_heading(diff, root), *_diff_lines(diff), ''))
-    lines.append(f'{len(shown)} cassette(s) changed')
+    lines.append(f'{len(shown)} file(s) changed')
     return '\n'.join(lines)
 
 
-def _file_heading(diff: CassetteDiff, root: Path) -> str:
+def _file_heading(diff: FileDiff, root: Path) -> str:
     counts = (
         f'{len(diff.changed)} changed, {len(diff.added)} added, '
         f'{len(diff.removed)} removed, {diff.unchanged} unchanged'
@@ -334,7 +402,9 @@ def _file_heading(diff: CassetteDiff, root: Path) -> str:
     return f'{_relative(diff.path, root)} ({diff.status}): {counts}'
 
 
-def _diff_lines(diff: CassetteDiff) -> list[str]:
+def _diff_lines(diff: FileDiff) -> list[str]:
+    if isinstance(diff, SnapshotDiff):
+        return _snapshot_lines(diff)
     lines: list[str] = []
     for item in diff.changed:
         moved = f'  (was #{item.old.index})' if item.old.index != item.new.index else ''
@@ -347,6 +417,16 @@ def _diff_lines(diff: CassetteDiff) -> list[str]:
     return lines
 
 
+def _snapshot_lines(diff: SnapshotDiff) -> list[str]:
+    lines: list[str] = []
+    for change in diff.changed:
+        lines.append(f'  ~ {change.name}')
+        lines.extend(f'      {line}' for line in change.lines)
+    lines.extend(f'  + {name}' for name in diff.added)
+    lines.extend(f'  - {name}' for name in diff.removed)
+    return lines
+
+
 def _relative(path: Path, root: Path) -> str:
     try:
         return str(path.relative_to(root))
@@ -354,11 +434,11 @@ def _relative(path: Path, root: Path) -> str:
         return str(path)
 
 
-def diffs_to_dict(diffs: Sequence[CassetteDiff], root: Path) -> list[dict[str, object]]:
-    """Convert cassette diffs to JSON-ready data, skipping files with no changes.
+def diffs_to_dict(diffs: Sequence[FileDiff], root: Path) -> list[dict[str, object]]:
+    """Convert cassette and snapshot diffs to JSON-ready data, skipping unchanged files.
 
     Returns:
-        One dict per changed cassette.
+        One dict per changed file; ``kind`` is ``cassette`` or ``snapshots``.
     """
 
     def summary(i: Interaction) -> dict[str, object]:
@@ -374,8 +454,20 @@ def diffs_to_dict(diffs: Sequence[CassetteDiff], root: Path) -> list[dict[str, o
             'lines': list(c.lines),
         }
 
-    return [
-        {
+    def snapshot_entry(d: SnapshotDiff) -> dict[str, object]:
+        return {
+            'kind': 'snapshots',
+            'path': _relative(d.path, root),
+            'status': d.status,
+            'unchanged': d.unchanged,
+            'added': list(d.added),
+            'removed': list(d.removed),
+            'changed': [{'name': c.name, 'lines': list(c.lines)} for c in d.changed],
+        }
+
+    def cassette_entry(d: CassetteDiff) -> dict[str, object]:
+        return {
+            'kind': 'cassette',
             'path': _relative(d.path, root),
             'status': d.status,
             'unchanged': d.unchanged,
@@ -390,6 +482,9 @@ def diffs_to_dict(diffs: Sequence[CassetteDiff], root: Path) -> list[dict[str, o
                 for item in d.changed
             ],
         }
+
+    return [
+        snapshot_entry(d) if isinstance(d, SnapshotDiff) else cassette_entry(d)
         for d in diffs
         if not d.is_empty
     ]

@@ -1,0 +1,21 @@
+# serializer version: 1
+# name: TestUsers.test_get[admin]
+  dict({
+    'email': 'ann@example.com',
+    'id': 1,
+    'roles': list([
+      'admin',
+      'user',
+    ]),
+  })
+# ---
+# name: test_greeting
+  'Hello, Ann!'
+# ---
+# name: test_report
+  '''
+  Total: 3
+  Failed: 0
+  
+  '''
+# ---

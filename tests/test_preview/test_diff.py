@@ -203,7 +203,7 @@ class TestRendering:
             '  + #0 POST https://api.test/new  201 OK',
             '  - #1 DELETE https://api.test/gone  200 OK',
             '',
-            '1 cassette(s) changed',
+            '1 file(s) changed',
         ]
 
     def test_render_nothing(self):
